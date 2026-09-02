@@ -1,0 +1,1 @@
+ALTER TABLE blog_posts ADD COLUMN featured_image_public_id VARCHAR(300);

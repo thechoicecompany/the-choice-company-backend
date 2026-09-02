@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Inquiry Received — The Choice Company</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:30px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0"
+             style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+
+        <!-- Header -->
+        <tr>
+          <td style="background:#0D1B2A;padding:28px 32px;text-align:center;">
+            <h1 style="margin:0;color:#C89B3C;font-size:22px;letter-spacing:1px;">
+              THE CHOICE COMPANY
+            </h1>
+            <p style="margin:6px 0 0;color:#ffffff;opacity:0.65;font-size:13px;">
+              Making Every Gift Memorable
+            </p>
+          </td>
+        </tr>
+
+        <!-- Gold rule -->
+        <tr><td style="background:#C89B3C;height:4px;"></td></tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="padding:36px 32px;">
+            <h2 style="color:#0D1B2A;margin:0 0 16px;font-size:20px;">
+              Inquiry Received! 🎁
+            </h2>
+            <p style="color:#555;font-size:15px;margin:0 0 12px;">
+              Dear <strong th:text="${inquiry.contactPerson}">Contact Person</strong>,
+            </p>
+            <p style="color:#555;font-size:15px;line-height:1.7;margin:0 0 24px;">
+              Thank you for reaching out to The Choice Company. We have received your
+              bulk gifting inquiry and our team will get back to you within
+              <strong>24 hours</strong>.
+            </p>
+
+            <!-- Reference box -->
+            <div style="background:#F9F7F3;border-left:4px solid #C89B3C;
+                        border-radius:8px;padding:20px 24px;margin:0 0 28px;">
+              <p style="margin:0;font-size:13px;color:#888;text-transform:uppercase;
+                         letter-spacing:1px;">Your Inquiry Reference Number</p>
+              <h2 style="margin:8px 0 0;color:#0D1B2A;font-size:28px;letter-spacing:2px;"
+                  th:text="${inquiry.refNumber}">TCC-2026-00000</h2>
+            </div>
+
+            <!-- Inquiry summary table -->
+            <h4 style="color:#0D1B2A;margin:0 0 12px;font-size:15px;">Inquiry Summary</h4>
+            <table width="100%" cellpadding="0" cellspacing="0"
+                   style="border-collapse:collapse;font-size:14px;margin:0 0 28px;">
+              <tr>
+                <td style="padding:9px 14px;color:#888;background:#f9f9f9;
+                            border-bottom:1px solid #eee;width:38%;">Company</td>
+                <td style="padding:9px 14px;color:#333;font-weight:bold;
+                            border-bottom:1px solid #eee;"
+                    th:text="${inquiry.companyName}"></td>
+              </tr>
+              <tr>
+                <td style="padding:9px 14px;color:#888;background:#f9f9f9;
+                            border-bottom:1px solid #eee;width:38%;">Category</td>
+                <td style="padding:9px 14px;color:#333;font-weight:bold;
+                            border-bottom:1px solid #eee;"
+                    th:text="${inquiry.productCategory}"></td>
+              </tr>
+              <tr>
+                <td style="padding:9px 14px;color:#888;background:#f9f9f9;
+                            border-bottom:1px solid #eee;width:38%;">Quantity</td>
+                <td style="padding:9px 14px;color:#333;font-weight:bold;
+                            border-bottom:1px solid #eee;"
+                    th:text="${inquiry.quantityRequired} + ' units'"></td>
+              </tr>
+              <tr>
+                <td style="padding:9px 14px;color:#888;background:#f9f9f9;
+                            border-bottom:1px solid #eee;width:38%;">Budget</td>
+                <td style="padding:9px 14px;color:#333;font-weight:bold;
+                            border-bottom:1px solid #eee;"
+                    th:text="${inquiry.budgetRange}"></td>
+              </tr>
+              <tr>
+                <td style="padding:9px 14px;color:#888;background:#f9f9f9;
+                            border-bottom:1px solid #eee;width:38%;">Location</td>
+                <td style="padding:9px 14px;color:#333;font-weight:bold;
+                            border-bottom:1px solid #eee;"
+                    th:text="${inquiry.city} + ', ' + ${inquiry.state}"></td>
+              </tr>
+            </table>
+
+            <!-- What happens next -->
+            <h4 style="color:#0D1B2A;margin:0 0 16px;font-size:15px;">What Happens Next?</h4>
+            <ol style="color:#555;font-size:14px;line-height:2;padding-left:20px;margin:0 0 28px;">
+              <li>Our team reviews your requirement <strong>(within 2 hours)</strong></li>
+              <li>We send you a detailed quotation <strong>(within 24 hours)</strong></li>
+              <li>Sample discussion and specification approval</li>
+              <li>Production begins on your confirmation and advance payment</li>
+              <li>Pan-India delivery to your doorstep</li>
+            </ol>
+
+            <!-- CTA -->
+            <div style="text-align:center;margin:0 0 24px;">
+              <a href="https://wa.me/916268899194"
+                 style="background:#25D366;color:#fff;padding:13px 32px;
+                         border-radius:8px;text-decoration:none;font-size:15px;
+                         font-weight:bold;display:inline-block;">
+                💬 Follow Up on WhatsApp
+              </a>
+            </div>
+
+            <p style="color:#888;font-size:13px;text-align:center;margin:0;">
+              Questions? Call
+              <a href="tel:+916268899194" style="color:#C89B3C;">+91 62688 99194</a>
+              or email
+              <a href="mailto:info@thechoicecompany.in" style="color:#C89B3C;">
+                info@thechoicecompany.in
+              </a>
+            </p>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="background:#0D1B2A;padding:18px 32px;text-align:center;">
+            <p style="margin:0;color:#ffffff;opacity:0.35;font-size:12px;">
+              © 2026 The Choice Company · Indore, Madhya Pradesh, India<br/>
+              GST Registered · Pan-India Delivery · 500+ Corporate Clients
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>

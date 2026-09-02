@@ -1,0 +1,47 @@
+# ===========================
+# Maven Build Output
+# ===========================
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# ===========================
+# Spring Boot - ALL 4 PROPERTIES (have secrets)
+# ===========================
+src/main/resources/application.properties
+src/main/resources/application-dev.properties
+src/main/resources/application-prod.properties
+src/main/resources/application-test.properties
+
+# ===========================
+# Environment & Secrets
+# ===========================
+.env
+*.pem
+*.key
+*.p12
+*.jks
+
+# ===========================
+# IDE
+# ===========================
+.settings/
+.classpath
+.project
+.factorypath
+.idea/
+*.iml
+
+# ===========================
+# Logs
+# ===========================
+logs/
+*.log
+
+# ===========================
+# OS Files
+# ===========================
+.DS_Store
+Thumbs.db

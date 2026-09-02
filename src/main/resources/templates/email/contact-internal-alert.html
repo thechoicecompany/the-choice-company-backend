@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #eee; border-radius: 12px;">
+  <div style="background: #0D1B2A; padding: 16px; border-radius: 8px 8px 0 0;">
+    <h2 style="color: #C89B3C; margin: 0; font-size: 18px;">📩 New Contact Form Message</h2>
+  </div>
+  <div style="padding: 24px; background: #fff;">
+    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+      <tr><td style="padding: 6px 8px; color: #888; width: 30%;">Name</td>
+          <td style="padding: 6px 8px; color: #333; font-weight: bold;" th:text="${contact.name}"></td></tr>
+      <tr><td style="padding: 6px 8px; color: #888;">Company</td>
+          <td style="padding: 6px 8px; color: #333;" th:text="${contact.company} ?: '—'"></td></tr>
+      <tr><td style="padding: 6px 8px; color: #888;">Email</td>
+          <td style="padding: 6px 8px; color: #333;">
+            <a th:href="'mailto:' + ${contact.email}" th:text="${contact.email}" style="color: #C89B3C;"></a>
+          </td></tr>
+      <tr><td style="padding: 6px 8px; color: #888;">Phone</td>
+          <td style="padding: 6px 8px; color: #333;" th:text="${contact.phone} ?: '—'"></td></tr>
+      <tr><td style="padding: 6px 8px; color: #888;">Subject</td>
+          <td style="padding: 6px 8px; color: #333; font-weight: bold;" th:text="${contact.subject}"></td></tr>
+    </table>
+
+    <h4 style="color: #0D1B2A; margin-top: 20px;">Message</h4>
+    <p style="color: #333; font-size: 13px; background: #F9F7F3; padding: 12px; border-radius: 8px;" th:text="${contact.message}"></p>
+
+    <div style="margin-top: 20px; text-align: center;">
+      <a href="https://thechoicecompany.in/admin/contact-messages"
+         style="background: #C89B3C; color: #0D1B2A; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 13px;">
+        View in Admin Panel
+      </a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

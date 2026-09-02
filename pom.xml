@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+
+  <!-- ── PARENT ────────────────────────────────────────────────────────── -->
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <!-- Spring Boot 3.3.x — latest STABLE as of Aug 2026 -->
+    <!-- Spring Boot 4.x requires Spring Framework 7 + Jakarta EE 11 — not yet stable -->
+    <version>3.3.2</version>
+    <relativePath/>
+  </parent>
+
+  <!-- ── PROJECT IDENTITY ─────────────────────────────────────────────── -->
+  <groupId>com.thechoicecompany</groupId>
+  <artifactId>tcc-backend</artifactId>
+  <version>2.0.0</version>
+  <packaging>jar</packaging>
+  <name>The Choice Company Backend</name>
+  <description>Spring Boot REST API for The Choice Company Corporate Gifting Platform</description>
+
+  <!-- ── PROPERTIES ───────────────────────────────────────────────────── -->
+  <properties>
+    <java.version>21</java.version>
+    <jjwt.version>0.12.6</jjwt.version>
+    <mapstruct.version>1.6.2</mapstruct.version>
+    <springdoc.version>2.6.0</springdoc.version>
+    <aws-sdk.version>2.26.29</aws-sdk.version>
+    <flyway.version>10.17.0</flyway.version>
+    <lombok.version>1.18.34</lombok.version>
+  </properties>
+
+  <!-- ── DEPENDENCIES ─────────────────────────────────────────────────── -->
+  <dependencies>
+
+    <!-- ── SPRING BOOT STARTERS ───────────────────────────────────────── -->
+    <!-- Web: REST controllers, Jackson JSON, Tomcat embedded -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+    <!-- Data JPA: Hibernate ORM + Spring Data repositories -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+
+    <!-- Security: Spring Security for JWT auth -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
+
+    <!-- Validation: @Valid, @NotNull, @Email etc on DTOs -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+
+    <!-- Email: JavaMailSender for inquiry ACK + order confirmation -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-mail</artifactId>
+    </dependency>
+
+    <!-- Actuator: /actuator/health for AWS load balancer health checks -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+
+    <!-- Thymeleaf: HTML email templates -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-thymeleaf</artifactId>
+    </dependency>
+<dependency>
+  <groupId>com.cloudinary</groupId>
+  <artifactId>cloudinary-http45</artifactId>
+  <version>1.39.0</version>
+</dependency>
+    <!-- ── DATABASE ───────────────────────────────────────────────────── -->
+    <!-- PostgreSQL JDBC Driver — stable for PostgreSQL 16/17/18 -->
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+
+    <!-- Flyway: DB schema version control — production migrations -->
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-core</artifactId>
+      <version>${flyway.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-database-postgresql</artifactId>
+      <version>${flyway.version}</version>
+    </dependency>
+
+    <!-- ── JWT ────────────────────────────────────────────────────────── -->
+    <!-- JJWT — most used JWT library for Spring Boot, fully Jakarta-compatible -->
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-api</artifactId>
+      <version>${jjwt.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-impl</artifactId>
+      <version>${jjwt.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.jsonwebtoken</groupId>
+      <artifactId>jjwt-jackson</artifactId>
+      <version>${jjwt.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+
+    <!-- ── UTILITIES ──────────────────────────────────────────────────── -->
+    <!-- Lombok: @Data @Builder @Slf4j — reduces boilerplate -->
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <optional>true</optional>
+    </dependency>
+
+    <!-- MapStruct: Entity ↔ DTO mapping without manual code -->
+    <dependency>
+      <groupId>org.mapstruct</groupId>
+      <artifactId>mapstruct</artifactId>
+      <version>${mapstruct.version}</version>
+    </dependency>
+
+    <!-- Apache Commons Lang: StringUtils, RandomStringUtils -->
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>3.15.0</version>
+    </dependency>
+
+    <!-- ── API DOCUMENTATION ──────────────────────────────────────────── -->
+    <!-- SpringDoc OpenAPI 3 → auto-generates Swagger UI at /swagger-ui.html -->
+    <dependency>
+      <groupId>org.springdoc</groupId>
+      <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+      <version>${springdoc.version}</version>
+    </dependency>
+
+    <!-- ── AWS SDK ────────────────────────────────────────────────────── -->
+    <!-- AWS SDK v2 — for S3 operations if backend also handles file uploads -->
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>s3</artifactId>
+      <version>${aws-sdk.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>ses</artifactId>
+      <version>${aws-sdk.version}</version>
+    </dependency>
+
+    <!-- ── HTTP CLIENT ────────────────────────────────────────────────── -->
+    <!-- OkHttp: for calling WhatsApp Business API and reCAPTCHA verify -->
+    <dependency>
+      <groupId>com.squareup.okhttp3</groupId>
+      <artifactId>okhttp</artifactId>
+      <version>4.12.0</version>
+    </dependency>
+
+    <!-- ── TESTING ────────────────────────────────────────────────────── -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- H2 in-memory DB for unit tests — no PostgreSQL needed in CI -->
+    <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+  </dependencies>
+
+  <!-- ── BUILD ────────────────────────────────────────────────────────── -->
+  <build>
+    <plugins>
+
+      <!-- Spring Boot Maven Plugin — creates executable fat JAR -->
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+            </exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+
+      <!-- Maven Compiler Plugin — Java 21 with annotation processors -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.13.0</version>
+        <configuration>
+          <source>21</source>
+          <target>21</target>
+          <annotationProcessorPaths>
+            <!-- Lombok must come before MapStruct -->
+            <path>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+              <version>${lombok.version}</version>
+            </path>
+            <path>
+              <groupId>org.mapstruct</groupId>
+              <artifactId>mapstruct-processor</artifactId>
+              <version>${mapstruct.version}</version>
+            </path>
+          </annotationProcessorPaths>
+        </configuration>
+      </plugin>
+
+      <!-- Surefire Plugin — runs JUnit 5 tests -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.3.1</version>
+      </plugin>
+
+      <!-- Flyway Maven Plugin — run migrations from CLI -->
+      <plugin>
+        <groupId>org.flywaydb</groupId>
+        <artifactId>flyway-maven-plugin</artifactId>
+        <version>${flyway.version}</version>
+      </plugin>
+
+    </plugins>
+  </build>
+
+</project>

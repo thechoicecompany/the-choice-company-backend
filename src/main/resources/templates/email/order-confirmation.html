@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Order Confirmed — The Choice Company</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:30px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0"
+             style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+
+        <!-- Header -->
+        <tr>
+          <td style="background:#0D1B2A;padding:28px 32px;text-align:center;">
+            <h1 style="margin:0;color:#C89B3C;font-size:22px;">THE CHOICE COMPANY</h1>
+            <p style="margin:6px 0 0;color:#ffffff;opacity:0.65;font-size:13px;">
+              Order Confirmed ✓
+            </p>
+          </td>
+        </tr>
+        <tr><td style="background:#C89B3C;height:4px;"></td></tr>
+
+        <tr>
+          <td style="padding:36px 32px;">
+            <h2 style="color:#0D1B2A;margin:0 0 16px;">Your sample is on its way! 🎉</h2>
+            <p style="color:#555;font-size:15px;margin:0 0 24px;">
+              Dear <strong th:text="${order.customerName}">Customer</strong>,
+              your sample purchase has been confirmed and payment received.
+              We will deliver within <strong>7–10 working days</strong>.
+            </p>
+
+            <!-- Order reference -->
+            <div style="background:#F9F7F3;border-left:4px solid #C89B3C;
+                        border-radius:8px;padding:20px 24px;margin:0 0 28px;">
+              <p style="margin:0;font-size:13px;color:#888;text-transform:uppercase;">Order ID</p>
+              <h2 style="margin:8px 0 4px;color:#0D1B2A;font-size:24px;"
+                  th:text="${order.orderId}">TCC-DEMO-2026-00000</h2>
+              <p style="margin:0;font-size:12px;color:#aaa;"
+                 th:text="'Payment ID: ' + ${order.razorpayPaymentId}">Payment ID</p>
+            </div>
+
+            <!-- Amount summary -->
+            <table width="100%" cellpadding="0" cellspacing="0"
+                   style="border-collapse:collapse;font-size:14px;margin:0 0 28px;">
+              <tr style="background:#0D1B2A;">
+                <th style="padding:10px 14px;color:#C89B3C;text-align:left;">Item</th>
+                <th style="padding:10px 14px;color:#C89B3C;text-align:center;">Qty</th>
+                <th style="padding:10px 14px;color:#C89B3C;text-align:right;">Amount</th>
+              </tr>
+              <!-- Items rendered dynamically in service layer -->
+              <tr>
+                <td colspan="2" style="padding:10px 14px;font-weight:bold;color:#0D1B2A;">
+                  Total (incl. 18% GST)
+                </td>
+                <td style="padding:10px 14px;text-align:right;font-weight:bold;color:#C89B3C;font-size:16px;"
+                    th:text="'₹' + ${#numbers.formatDecimal(order.total,1,'COMMA',2,'POINT')}">
+                  ₹0.00
+                </td>
+              </tr>
+            </table>
+
+            <!-- Bulk upsell -->
+            <div style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:10px;
+                        padding:20px 24px;margin:0 0 24px;">
+              <h4 style="color:#166534;margin:0 0 8px;">👍 Happy with the quality?</h4>
+              <p style="color:#166534;font-size:14px;margin:0 0 14px;line-height:1.6;">
+                Place a bulk order (MOQ 50 units) with your logo branded at wholesale rates.
+                Save up to 44% vs sample price!
+              </p>
+              <a href="https://thechoicecompany.in/bulk-orders"
+                 style="background:#1A5C4A;color:#fff;padding:10px 22px;
+                         border-radius:6px;text-decoration:none;font-size:14px;">
+                Get Bulk Quote →
+              </a>
+            </div>
+
+            <p style="color:#888;font-size:13px;text-align:center;margin:0;">
+              Questions? WhatsApp us at
+              <a href="https://wa.me/916268899194" style="color:#25D366;">+91 6268899194</a>
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="background:#0D1B2A;padding:18px;text-align:center;">
+            <p style="margin:0;color:#ffffff;opacity:0.35;font-size:12px;">
+              © 2026 The Choice Company · All Rights Reserved
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>

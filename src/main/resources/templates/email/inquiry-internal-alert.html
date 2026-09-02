@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>New Inquiry Alert</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:30px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0"
+             style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+
+        <!-- Header -->
+        <tr>
+          <td style="background:#0D1B2A;padding:20px 32px;text-align:center;">
+            <h1 style="margin:0;color:#C89B3C;font-size:18px;letter-spacing:1px;">
+              🔔 NEW INQUIRY RECEIVED
+            </h1>
+            <p style="margin:6px 0 0;color:#ffffff;opacity:0.65;font-size:12px;">
+              The Choice Company — Internal Alert
+            </p>
+          </td>
+        </tr>
+        <tr><td style="background:#C89B3C;height:4px;"></td></tr>
+
+        <!-- Ref number -->
+        <tr>
+          <td style="padding:24px 32px 0;">
+            <div style="background:#F9F7F3;border-left:4px solid #C89B3C;
+                        border-radius:8px;padding:16px 20px;">
+              <p style="margin:0;font-size:12px;color:#888;text-transform:uppercase;letter-spacing:1px;">
+                Reference Number
+              </p>
+              <h2 style="margin:6px 0 0;color:#0D1B2A;font-size:24px;letter-spacing:2px;"
+                  th:text="${inquiry.refNumber}">TCC-2026-00000</h2>
+            </div>
+          </td>
+        </tr>
+
+        <!-- All inquiry details -->
+        <tr>
+          <td style="padding:24px 32px;">
+            <h4 style="color:#0D1B2A;margin:0 0 12px;font-size:15px;">Inquiry Details</h4>
+            <table width="100%" cellpadding="0" cellspacing="0"
+                   style="border-collapse:collapse;font-size:14px;">
+
+              <tr>
+                <td style="padding:9px 14px;color:#888;background:#f9f9f9;border-bottom:1px solid #eee;width:38%;">Company</td>
+                <td style="padding:9px 14px;color:#333;font-weight:bold;border-bottom:1px solid #eee;"
+                    th:text="${inquiry.companyName}"></td>
+              </tr>
+              <tr>
+                <td style="padding:9px 14px;color:#888;background:#f9f9f9;border-bottom:1px solid #eee;">Contact Person</td>
+                <td style="padding:9px 14px;color:#333;font-weight:bold;border-bottom:1px solid #eee;"
+                    th:text="${inquiry.contactPerson}"></td>
+              </tr>
+              <tr>
+                <td style="padding:9px 14px;color:#888;background:#f9f9f9;border-bottom:1px solid #eee;">Designation</td>
+                <td style="padding:9px 14px;color:#333;border-bottom:1px solid #eee;"
+                    th:text="${inquiry.designation}"></td>
+              </tr>
+              <tr>
+                <td style="padding:9px 14px;color:#888;background:#f9f9f9;border-bottom:1px solid #eee;">Email</td>
+                <td style="padding:9px 14px;border-bottom:1px solid #eee;">
+                  <a th:href="'mailto:' + ${inquiry.email}"
+                     th:text="${inquiry.email}"
+                     style="color:#C89B3C;"></a>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:9px 14px;color:#888;background:#f9f9f9;border-bottom:1px solid #eee;">Mobile</td>
+                <td style="padding:9px 14px;border-bottom:1px solid #eee;">
+                  <a th:href="'tel:' + ${inquiry.mobile}"
+                     th:text="${inquiry.mobile}"
+                     style="color:#C89B3C;"></a>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:9px 14px;color:#888;background:#f9f9f9;border-bottom:1px solid #eee;">Product Category</td>
+                <td style="padding:9px 14px;color:#333;font-weight:bold;border-bottom:1px solid #eee;"
+                    th:text="${inquiry.productCategory}"></td>
+              </tr>
+              <tr>
+                <td style="padding:9px 14px;color:#888;background:#f9f9f9;border-bottom:1px solid #eee;">Quantity</td>
+                <td style="padding:9px 14px;color:#333;font-weight:bold;border-bottom:1px solid #eee;"
+                    th:text="${inquiry.quantityRequired} + ' units'"></td>
+              </tr>
+              <tr>
+                <td style="padding:9px 14px;color:#888;background:#f9f9f9;border-bottom:1px solid #eee;">Budget Range</td>
+                <td style="padding:9px 14px;color:#333;font-weight:bold;border-bottom:1px solid #eee;"
+                    th:text="${inquiry.budgetRange}"></td>
+              </tr>
+              <tr>
+                <td style="padding:9px 14px;color:#888;background:#f9f9f9;border-bottom:1px solid #eee;">Location</td>
+                <td style="padding:9px 14px;color:#333;border-bottom:1px solid #eee;"
+                    th:text="${inquiry.city} + ', ' + ${inquiry.state}"></td>
+              </tr>
+              <tr>
+                <td style="padding:9px 14px;color:#888;background:#f9f9f9;border-bottom:1px solid #eee;">Delivery Location</td>
+                <td style="padding:9px 14px;color:#333;border-bottom:1px solid #eee;"
+                    th:text="${inquiry.deliveryLocation}"></td>
+              </tr>
+              <tr>
+                <td style="padding:9px 14px;color:#888;background:#f9f9f9;border-bottom:1px solid #eee;">Branding Required</td>
+                <td style="padding:9px 14px;color:#333;border-bottom:1px solid #eee;"
+                    th:text="${inquiry.brandingRequired} ? 'Yes' : 'No'"></td>
+              </tr>
+              <tr>
+                <td style="padding:9px 14px;color:#888;background:#f9f9f9;border-bottom:1px solid #eee;">Expected Delivery</td>
+                <td style="padding:9px 14px;color:#333;border-bottom:1px solid #eee;"
+                    th:text="${inquiry.expectedDeliveryDate}"></td>
+              </tr>
+              <tr th:if="${inquiry.additionalNotes != null and !inquiry.additionalNotes.isBlank()}">
+                <td style="padding:9px 14px;color:#888;background:#f9f9f9;border-bottom:1px solid #eee;">Notes</td>
+                <td style="padding:9px 14px;color:#333;border-bottom:1px solid #eee;"
+                    th:text="${inquiry.additionalNotes}"></td>
+              </tr>
+            </table>
+
+            <!-- Quick action buttons -->
+            <div style="text-align:center;margin:28px 0 8px;">
+              <a th:href="'https://wa.me/916268899194' + ${inquiry.mobile}"
+                 style="background:#25D366;color:#fff;padding:11px 24px;
+                        border-radius:8px;text-decoration:none;font-size:14px;
+                        font-weight:bold;display:inline-block;margin-right:12px;">
+                💬 WhatsApp Customer
+              </a>
+              <a th:href="'mailto:' + ${inquiry.email}"
+                 style="background:#C89B3C;color:#fff;padding:11px 24px;
+                        border-radius:8px;text-decoration:none;font-size:14px;
+                        font-weight:bold;display:inline-block;">
+                ✉️ Reply via Email
+              </a>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="background:#0D1B2A;padding:16px 32px;text-align:center;">
+            <p style="margin:0;color:#ffffff;opacity:0.35;font-size:12px;">
+              The Choice Company — Internal Use Only
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
