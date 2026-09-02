@@ -4,6 +4,7 @@
 
 **Spring Boot 3.3.2 · Java 21 · PostgreSQL · Spring Security · JWT · Flyway · REST API · Cloudinary**
 
+
 ---
 
 ## 📌 Table of Contents
