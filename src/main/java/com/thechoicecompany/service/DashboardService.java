@@ -32,10 +32,8 @@ public class DashboardService {
         LocalDateTime monthStart   = now.withDayOfMonth(1).toLocalDate().atStartOfDay();
         LocalDateTime sixMonthsAgo = now.minusMonths(6);
 
-        // ── Inquiry stats — 1 query instead of 9 ──────────────
+        // ── Inquiry stats ──────────────────────────────────────
         Object[] raw = inquiryRepository.getInquirySummary(today, weekStart, monthStart);
-        // Hibernate wraps single-row multi-column native results in an extra Object[]
-        // Unwrap if the result came back nested: Object[]{ Object[]{ col0, col1, ... } }
         Object[] inqSummary = (raw.length == 1 && raw[0] instanceof Object[])
             ? (Object[]) raw[0]
             : raw;
@@ -95,14 +93,16 @@ public class DashboardService {
 
         // ── Inventory stats ────────────────────────────────────
         long totalProducts  = productRepository.count();
-        long activeProducts = productRepository.findWithFilters(null, null,
-            PageRequest.of(0, 1)).getTotalElements();
-        long lowStock       = inventoryRepository.countLowStockItems();
-        long outOfStock     = inventoryRepository.countOutOfStockItems();
-        Long totalUnits     = inventoryRepository.getTotalStockUnits();
+        long activeProducts = productRepository
+            .findWithFilters(null, null, null, null, null, null, PageRequest.of(0, 1))
+            .getTotalElements();
+        long lowStock   = inventoryRepository.countLowStockItems();
+        long outOfStock = inventoryRepository.countOutOfStockItems();
+        Long totalUnits = inventoryRepository.getTotalStockUnits();
 
         // ── Order stats ────────────────────────────────────────
-        long totalOrders = orderRepository.count();
+        long totalOrders     = orderRepository.count();
+        long ordersThisMonth = orderRepository.countByCreatedAtAfter(monthStart);
 
         return DashboardStatsResponse.builder()
             .totalInquiries(totalInquiries)
@@ -127,15 +127,16 @@ public class DashboardService {
             .outOfStockProducts(outOfStock)
             .totalStockUnits(totalUnits != null ? totalUnits : 0L)
             .totalDemoOrders(totalOrders)
+            .demoOrdersThisMonth(ordersThisMonth)
             .build();
     }
 
     // ── Helper: native queries return BigInteger/BigDecimal, not Long ──────
     private long toLong(Object value) {
         if (value == null) return 0L;
-        if (value instanceof Long l) return l;
+        if (value instanceof Long l)       return l;
         if (value instanceof BigInteger bi) return bi.longValue();
-        if (value instanceof Number n) return n.longValue();
+        if (value instanceof Number n)     return n.longValue();
         return 0L;
     }
 }

@@ -55,6 +55,7 @@ public class DashboardStatsResponse {
     private Long totalDemoOrders;
     private Long demoOrdersThisMonth;
 
+
     // ── GENERIC ENTRIES ───────────────────────────────────────
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class StatEntry {

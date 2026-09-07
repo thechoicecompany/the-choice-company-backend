@@ -9,8 +9,9 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -71,5 +72,13 @@ public class GlobalExceptionHandler {
 		log.error("Unhandled exception: {}", ex.getMessage(), ex);
 		return ResponseEntity.internalServerError()
 				.body(ApiResponse.error("An unexpected error occurred. Please contact support."));
+	}
+	
+	@ExceptionHandler(MaxUploadSizeExceededException.class)
+	@ResponseStatus(HttpStatus.PAYLOAD_TOO_LARGE)
+	public ResponseEntity<ApiResponse<Void>> handleMaxUploadSize(MaxUploadSizeExceededException ex) {
+	    log.warn("Upload rejected — file too large: {}", ex.getMessage());
+	    return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+	            .body(ApiResponse.error("File too large. Maximum allowed size is 50 MB."));
 	}
 }

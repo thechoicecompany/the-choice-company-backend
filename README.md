@@ -4,45 +4,46 @@
 
 **Spring Boot 3.3.2 · Java 21 · PostgreSQL · Spring Security · JWT · Flyway · REST API · Cloudinary**
 
-
 ---
 
 ## 📌 Table of Contents
 
-- [Project Overview](project-overview)
-- [Core Capabilities](core-capabilities)
-- [System Architecture](system-architecture)
-- [Project Structure](project-structure)
-- [Technology Stack](technology-stack)
-- [Application Layers](application-layers)
+- [Project Overview](#project-overview)
+- [Core Capabilities](#core-capabilities)
+- [System Architecture](#system-architecture)
+- [Project Structure](#project-structure)
+- [Technology Stack](#technology-stack)
+- [Application Layers](#application-layers)
 - [Authentication & Security](authentication--security)
-- [Admin Roles](admin-roles)
+- [Admin Roles](#admin-roles)
+- [User Management](#user-management)
 - [Product & Inventory System](product--inventory-system)
-- [Product Image Management](product-image-management)
-- [Cloudinary Integration](cloudinary-integration)
-- [Database Architecture](database-architecture)
-- [Flyway Migrations](flyway-migrations)
-- [REST API](rest-api)
+- [Sample Products](#sample-products)
+- [Product Image Management](#product-image-management)
+- [Cloudinary Integration](#cloudinary-integration)
+- [Database Architecture](#database-architecture)
+- [Flyway Migrations](#flyway-migrations)
+- [REST API](#rest-api)
 - [API Response Standards](api-response-standards)
-- [Exception Handling](exception-handling)
-- [Email System](email-system)
-- [External Integrations](external-integrations)
+- [Exception Handling](#exception-handling)
+- [Email System](#email-system)
+- [External Integrations](#external-integrations)
 - [Configuration & Profiles](configuration--profiles)
-- [Environment Variables](environment-variables)
-- [Prerequisites](prerequisites)
-- [Local Development Setup](local-development-setup)
+- [Environment Variables](#environment-variables)
+- [Prerequisites](#prerequisites)
+- [Local Development Setup](#local-development-setup)
 - [Swagger / OpenAPI](swagger--openapi)
 - [Health Monitoring](health-monitoring)
 - [Maven Commands](maven-commands)
 - [Testing](testing)
 - [Request Processing Flow](request-processing-flow)
-- [Development Guidelines](development-guidelines)
+- [Development Guidelines](#development-guidelines)
 - [Git Workflow](git-workflow)
-- [Security Checklist](security-checklist)
-- [Production Deployment Checklist](production-deployment-checklist)
-- [Future Enhancements](future-enhancements)
-- [Project Summary](project-summary)
-- [License](license)
+- [Security Checklist](#security-checklist)
+- [Production Deployment Checklist](#production-deployment-checklist)
+- [Future Enhancements](#future-enhancements)
+- [Project Summary](#project-summary)
+- [License](#license)
 
 ---
 
@@ -64,76 +65,90 @@ The backend is designed around a layered architecture that separates:
 - Validation
 - Testing
 
-The API is intended to serve both the public website and the protected administration dashboard.
+The API serves both the public website and the protected administration dashboard.
 
 ---
 
 # 🚀 Core Capabilities
 
-The backend currently supports the following major capabilities:
-
 ### 🔐 Authentication & Authorization
 
-- Administrator authentication
-- JWT-based stateless authentication
-- BCrypt password hashing
-- Role-based authorization
-- Protected admin APIs
-- `SUPER_ADMIN` and `CONTENT_MANAGER` roles
+- Administrator authentication via JWT
+- BCrypt password hashing (strength 10)
+- Role-based method-level authorization (`@PreAuthorize`)
+- Stateless session management
+- JWT verification endpoint for Next.js middleware
+- Four-role RBAC: `SUPER_ADMIN`, `SALES_MANAGER`, `SALES_EXECUTIVE`, `CONTENT_MANAGER`
+
+### 👤 User Management
+
+- `SUPER_ADMIN` can create admin users with any role
+- List, activate/deactivate, and delete admin users
+- Passwords hashed before storage — never returned in responses
+- Dev-only bootstrap endpoint for first `SUPER_ADMIN` creation (`@Profile("dev")`)
 
 ### 📦 Product Management
 
-- Product catalog
-- Product details by slug
-- Product pricing tiers
-- Product inventory support
-- Multiple product images
-- Primary product image
-- Image ordering
-- Product image metadata
+- Product catalog with slug-based lookup
+- Quantity-based pricing tiers
+- Product inventory tracking
+- Multiple Cloudinary images per product
+- Primary image enforcement via partial unique index
 - Admin product management APIs
+
+### 🛍️ Sample Products (Shop)
+
+- Separate sample product catalog for the storefront shop
+- Independent image management (`sample_product_images`)
+- Admin CRUD for sample products
+- Public browsing endpoints
 
 ### 🖼️ Image Management
 
 - Cloudinary-based image storage
-- Single image upload
-- Bulk image upload
+- Single and bulk image upload
 - Gallery image upload
-- Multiple images per product
-- File validation
+- File validation before upload
 - Duplicate image protection
-- Cloudinary upload rollback
-- Image transformation URLs
+- Cloudinary upload rollback on partial failure
+- Frontend-ready transformation URLs (thumbnail, listing, detail)
 
 ### 📨 Customer & Content Management
 
-- Customer inquiries
-- Inquiry notes
-- Catalogue requests
-- Blog content
-- Gallery content
+- Customer inquiries with notes and status tracking
+- Catalogue download requests
+- Contact messages with status management
+- Blog content management
+- Gallery content management
 - Newsletter subscriptions
-- Demo/sample orders
+- Demo/sample orders with full lifecycle management
+
+### 📊 Dashboard
+
+- Real-time inquiry statistics (today, week, month)
+- Catalogue download trends
+- Inventory health (low stock, out of stock)
+- Demo order counts
+- Top states and categories by inquiry volume
+- Monthly catalogue trend chart data
 
 ### 🔌 External Integrations
 
-- Cloudinary
-- SMTP / transactional email
+- Cloudinary (image storage)
+- SMTP / Thymeleaf (transactional email)
 - WhatsApp
-- Razorpay
-- AWS SDK support
+- Razorpay (payment processing)
+- AWS SDK v2
 
 ### 🛠️ Backend Infrastructure
 
-- PostgreSQL
-- Hibernate / JPA
-- Flyway database migrations
-- HikariCP connection pooling
+- PostgreSQL with HikariCP connection pooling
+- Flyway database migrations (schema-only, `ddl-auto=none`)
 - Spring Validation
-- SpringDoc OpenAPI
+- SpringDoc OpenAPI / Swagger
 - Spring Boot Actuator
 - Centralized exception handling
-- Unit and controller/integration testing
+- Async configuration
 
 ---
 
@@ -142,7 +157,7 @@ The backend currently supports the following major capabilities:
 ```text
 ┌─────────────────────────────────────────────┐
 │                  FRONTEND                   │
-│             Next.js / React                 │
+│             Next.js 15 / React              │
 │                                             │
 │       Public Website + Admin Dashboard      │
 └──────────────────────┬──────────────────────┘
@@ -152,9 +167,10 @@ The backend currently supports the following major capabilities:
 ┌─────────────────────────────────────────────┐
 │              SPRING BOOT API                │
 │                                             │
-│ Auth / Products / Inventory / Uploads       │
-│ Inquiries / Orders / Blog / Gallery         │
-│ Catalogue / Newsletter / Admin APIs         │
+│ Auth / Users / Products / Sample Products   │
+│ Inventory / Uploads / Inquiries / Orders    │
+│ Blog / Gallery / Catalogue / Newsletter     │
+│ Contact / Dashboard / Admin APIs            │
 └──────────────────────┬──────────────────────┘
                        │
              ┌─────────┴──────────┐
@@ -190,97 +206,201 @@ The backend currently supports the following major capabilities:
 tcc-backend/
 │
 ├── pom.xml
-├── mvnw
-├── mvnw.cmd
+├── mvnw / mvnw.cmd
 ├── README.md
 ├── .gitignore
 │
-├── src/
-│   │
-│   ├── main/
-│   │   │
-│   │   ├── java/
-│   │   │   └── com/thechoicecompany/tcc/
-│   │   │       │
-│   │   │       ├── config/
-│   │   │       │   ├── AppProperties.java
-│   │   │       │   ├── CloudinaryConfig.java
-│   │   │       │   ├── CorsConfig.java
-│   │   │       │   └── SecurityConfig.java
-│   │   │       │
-│   │   │       ├── controller/
-│   │   │       │   ├── AuthController.java
-│   │   │       │   ├── InquiryController.java
-│   │   │       │   ├── ProductController.java
-│   │   │       │   ├── BlogController.java
-│   │   │       │   ├── GalleryController.java
-│   │   │       │   ├── OrderController.java
-│   │   │       │   ├── NewsletterController.java
-│   │   │       │   └── UploadController.java
-│   │   │       │
-│   │   │       ├── dto/
-│   │   │       │   ├── request/
-│   │   │       │   └── response/
-│   │   │       │       └── ProductImageResponse.java
-│   │   │       │
-│   │   │       ├── entity/
-│   │   │       │   ├── User.java
-│   │   │       │   ├── Inquiry.java
-│   │   │       │   ├── InquiryNote.java
-│   │   │       │   ├── Product.java
-│   │   │       │   ├── ProductImage.java
-│   │   │       │   ├── ProductPricingTier.java
-│   │   │       │   ├── BlogPost.java
-│   │   │       │   ├── GalleryItem.java
-│   │   │       │   ├── DemoOrder.java
-│   │   │       │   └── NewsletterSubscriber.java
-│   │   │       │
-│   │   │       ├── enums/
-│   │   │       ├── exception/
-│   │   │       ├── repository/
-│   │   │       ├── security/
-│   │   │       ├── service/
-│   │   │       │   ├── UploadService.java
-│   │   │       │   └── ProductImageService.java
-│   │   │       └── util/
-│   │   │
-│   │   └── resources/
-│   │       │
-│   │       ├── application.properties
-│   │       ├── application-dev.properties
-│   │       ├── application-prod.properties
-│   │       │
-│   │       ├── db/
-│   │       │   └── migration/
-│   │       │       ├── V1__create_tables.sql
-│   │       │       ├── V2__seed_admin_user.sql
-│   │       │       ├── V3__...
-│   │       │       └── V4__add_product_images.sql
-│   │       │
-│   │       └── templates/
-│   │           ├── inquiry-ack.html
-│   │           └── order-confirmation.html
-│   │
-│   └── test/
-│       │
-│       ├── java/
-│       │   └── com/thechoicecompany/tcc/
-│       │       ├── InquiryServiceTest.java
-│       │       ├── InquiryControllerTest.java
-│       │       └── ApplicationTests.java
-│       │
-│       └── resources/
-│           └── application-test.properties
-│
-└── .gitignore
+└── src/
+    ├── main/
+    │   ├── java/com/thechoicecompany/
+    │   │   │
+    │   │   ├── config/
+    │   │   │   ├── AppProperties.java
+    │   │   │   ├── AsyncConfig.java
+    │   │   │   ├── CloudinaryConfig.java
+    │   │   │   ├── CorsConfig.java
+    │   │   │   ├── SecurityConfig.java
+    │   │   │   └── WebConfig.java
+    │   │   │
+    │   │   ├── controller/
+    │   │   │   ├── AdminBlogController.java
+    │   │   │   ├── AdminDashboardController.java
+    │   │   │   ├── AdminGalleryController.java
+    │   │   │   ├── AdminOrderController.java
+    │   │   │   ├── AdminProductController.java
+    │   │   │   ├── AdminSampleProductController.java
+    │   │   │   ├── AdminUserController.java
+    │   │   │   ├── AuthController.java
+    │   │   │   ├── BlogController.java
+    │   │   │   ├── BootstrapController.java       ← dev profile only
+    │   │   │   ├── CatalogueController.java
+    │   │   │   ├── ContactController.java
+    │   │   │   ├── GalleryController.java
+    │   │   │   ├── InquiryController.java
+    │   │   │   ├── NewsletterController.java
+    │   │   │   ├── OrderController.java
+    │   │   │   ├── OrderTrackingController.java
+    │   │   │   ├── ProductController.java
+    │   │   │   ├── SampleProductController.java
+    │   │   │   └── UploadController.java
+    │   │   │
+    │   │   ├── dto/
+    │   │   │   ├── request/
+    │   │   │   │   ├── AddNoteRequest.java
+    │   │   │   │   ├── BlogRequest.java
+    │   │   │   │   ├── CatalogueRequestDto.java
+    │   │   │   │   ├── ContactRequest.java
+    │   │   │   │   ├── CreateProductRequest.java
+    │   │   │   │   ├── CreateSampleProductRequest.java
+    │   │   │   │   ├── CreateUserRequest.java
+    │   │   │   │   ├── DemoOrderRequest.java
+    │   │   │   │   ├── GalleryItemUpdateRequest.java
+    │   │   │   │   ├── InquiryRequest.java
+    │   │   │   │   ├── LoginRequest.java
+    │   │   │   │   ├── NewsletterRequest.java
+    │   │   │   │   ├── UpdateContactStatusRequest.java
+    │   │   │   │   ├── UpdateInquiryStatusRequest.java
+    │   │   │   │   ├── UpdateInventoryRequest.java
+    │   │   │   │   ├── UpdateOrderStatusRequest.java
+    │   │   │   │   ├── UpdatePricingRequest.java
+    │   │   │   │   ├── UpdateProductRequest.java
+    │   │   │   │   └── UpdateSampleProductRequest.java
+    │   │   │   │
+    │   │   │   └── response/
+    │   │   │       ├── ApiResponse.java
+    │   │   │       ├── AuthResponse.java
+    │   │   │       ├── CatalogueResponseDto.java
+    │   │   │       ├── ContactResponse.java
+    │   │   │       ├── DashboardStatsResponse.java
+    │   │   │       ├── DemoOrderDetailDto.java
+    │   │   │       ├── DemoOrderSummaryDto.java
+    │   │   │       ├── GalleryItemDetailDto.java
+    │   │   │       ├── GalleryItemDto.java
+    │   │   │       ├── InquiryResponse.java
+    │   │   │       ├── InventoryResponse.java
+    │   │   │       ├── OrderTrackingDto.java
+    │   │   │       ├── PagedResponse.java
+    │   │   │       ├── ProductAdminResponse.java
+    │   │   │       ├── ProductImageResponse.java
+    │   │   │       ├── ProductResponse.java
+    │   │   │       ├── SampleProductAdminResponse.java
+    │   │   │       ├── SampleProductImageResponse.java
+    │   │   │       └── SampleProductResponse.java
+    │   │   │
+    │   │   ├── entity/
+    │   │   │   ├── BlogPost.java
+    │   │   │   ├── CatalogueRequest.java
+    │   │   │   ├── ContactMessage.java
+    │   │   │   ├── DemoOrder.java
+    │   │   │   ├── GalleryItem.java
+    │   │   │   ├── Inquiry.java
+    │   │   │   ├── InquiryNote.java
+    │   │   │   ├── NewsletterSubscriber.java
+    │   │   │   ├── Product.java
+    │   │   │   ├── ProductImage.java
+    │   │   │   ├── ProductInventory.java
+    │   │   │   ├── ProductPricingTier.java
+    │   │   │   ├── SampleProduct.java
+    │   │   │   ├── SampleProductImage.java
+    │   │   │   └── User.java
+    │   │   │
+    │   │   ├── enums/
+    │   │   │   ├── ContactStatus.java
+    │   │   │   ├── InquirySource.java
+    │   │   │   ├── InquiryStatus.java
+    │   │   │   ├── InventoryAction.java
+    │   │   │   ├── OrderStatus.java
+    │   │   │   └── UserRole.java
+    │   │   │
+    │   │   ├── exception/
+    │   │   │   ├── BusinessException.java
+    │   │   │   ├── DuplicateResourceException.java
+    │   │   │   ├── GlobalExceptionHandler.java
+    │   │   │   └── ResourceNotFoundException.java
+    │   │   │
+    │   │   ├── repository/
+    │   │   │   ├── BlogRepository.java
+    │   │   │   ├── CatalogueRequestRepository.java
+    │   │   │   ├── ContactMessageRepository.java
+    │   │   │   ├── GalleryRepository.java
+    │   │   │   ├── InquiryRepository.java
+    │   │   │   ├── InventoryRepository.java
+    │   │   │   ├── NewsletterRepository.java
+    │   │   │   ├── OrderRepository.java
+    │   │   │   ├── ProductImageRepository.java
+    │   │   │   ├── ProductRepository.java
+    │   │   │   ├── SampleProductImageRepository.java
+    │   │   │   ├── SampleProductRepository.java
+    │   │   │   └── UserRepository.java
+    │   │   │
+    │   │   ├── security/
+    │   │   │   ├── JwtAuthFilter.java
+    │   │   │   ├── JwtTokenProvider.java
+    │   │   │   └── UserDetailsServiceImpl.java
+    │   │   │
+    │   │   ├── service/
+    │   │   │   ├── AdminGalleryService.java
+    │   │   │   ├── AdminOrderService.java
+    │   │   │   ├── AuthService.java
+    │   │   │   ├── BlogService.java
+    │   │   │   ├── ContactService.java
+    │   │   │   ├── DashboardService.java
+    │   │   │   ├── EmailService.java
+    │   │   │   ├── GalleryService.java
+    │   │   │   ├── InquiryService.java
+    │   │   │   ├── InventoryService.java
+    │   │   │   ├── NewsletterService.java
+    │   │   │   ├── OrderService.java
+    │   │   │   ├── ProductImageService.java
+    │   │   │   ├── ProductService.java
+    │   │   │   ├── SampleProductService.java
+    │   │   │   ├── UploadService.java
+    │   │   │   └── WhatsAppService.java
+    │   │   │
+    │   │   └── util/
+    │   │       ├── ReferenceGenerator.java
+    │   │       └── SlugUtils.java
+    │   │
+    │   └── resources/
+    │       ├── application.properties
+    │       ├── application-dev.properties
+    │       ├── application-prod.properties
+    │       ├── application-test.properties
+    │       │
+    │       ├── db/migration/
+    │       │   ├── V1__create_tables.sql
+    │       │   ├── V2__seed_admin_user.sql
+    │       │   ├── V3__add_inventory_and_catalogue.sql
+    │       │   ├── V4__add_product_images.sql
+    │       │   ├── V6__create_sample_products.sql
+    │       │   ├── V7__create_contact_messages.sql
+    │       │   ├── V8__gallery_files_fields.sql
+    │       │   ├── V9__gallery_cloudinary_fields.sql
+    │       │   ├── V10__add_blog_featured_image_public_id.sql
+    │       │   └── V11__baseline_no_op.sql
+    │       │
+    │       └── templates/email/
+    │           ├── catalogue-ack.html
+    │           ├── catalogue-internal-alert.html
+    │           ├── contact-ack.html
+    │           ├── contact-internal-alert.html
+    │           ├── inquiry-ack.html
+    │           ├── inquiry-internal-alert.html
+    │           └── order-confirmation.html
+    │
+    └── test/
+        ├── java/com/thechoicecompany/
+        │   ├── InquiryServiceTest.java
+        │   ├── InquiryControllerTest.java
+        │   └── ApplicationTests.java
+        └── resources/
+            └── application-test.properties
 ```
-
-> The exact source tree may contain additional classes. The actual source tree and `pom.xml` remain the source of truth.
 
 ---
 
 # 🧰 Technology Stack
-
+```
 | Layer | Technology |
 |---|---|
 | Language | Java 21 |
@@ -288,7 +408,7 @@ tcc-backend/
 | Web | Spring Web / REST |
 | Security | Spring Security |
 | Authentication | JWT / JJWT 0.12.6 |
-| Password Hashing | BCrypt |
+| Password Hashing | BCrypt (strength 10) |
 | ORM | Hibernate |
 | Persistence | Spring Data JPA |
 | Database | PostgreSQL |
@@ -304,475 +424,216 @@ tcc-backend/
 | Testing | JUnit / Mockito / MockMvc / H2 |
 | Build Tool | Maven 3.9.x |
 
+  ```
 > Dependency versions defined in `pom.xml` are the final source of truth.
-
 ---
+
 
 # 🧱 Application Layers
 
 ## 1. Controller Layer
 
-Controllers expose REST endpoints and are responsible for:
+Controllers expose REST endpoints and handle:
 
-- Receiving HTTP requests
-- Request validation
-- Calling service methods
-- Returning response DTOs
+- HTTP request reception
+- Request validation delegation
+- Service method invocation
+- Response DTO return
 - Endpoint-level authorization
-
-Controllers include:
-
-```text
-AuthController
-InquiryController
-ProductController
-BlogController
-GalleryController
-OrderController
-NewsletterController
-UploadController
-```
-
-> Business logic should remain in services rather than controllers.
-
----
 
 ## 2. DTO Layer
 
-DTOs control the data entering and leaving the API.
-
-### Request DTOs
-
-Validation commonly uses:
-
-```java
-@Valid
-@NotBlank
-@NotNull
-@Pattern
-@Size
-```
-
-### Response DTOs
-
-Examples:
-
-```text
-ApiResponse
-PagedResponse
-AuthResponse
-InquiryResponse
-ProductResponse
-ProductImageResponse
-```
-
-DTO separation prevents direct exposure of JPA entities through REST APIs.
-
----
+DTOs control data entering and leaving the API. Request DTOs use Jakarta Bean Validation annotations. Response DTOs prevent direct JPA entity exposure.
 
 ## 3. Service Layer
-
-The service layer contains application business logic.
-
+```
 | Service | Responsibility |
 |---|---|
-| `AuthService` | Authentication |
-| `InquiryService` | Inquiry processing |
+| `AuthService` | Authentication and JWT generation |
+| `InquiryService` | Inquiry processing and notes |
 | `ProductService` | Product catalog and pricing |
 | `ProductImageService` | Product image management |
-| `OrderService` | Demo/sample order processing |
-| `BlogService` | Blog management |
-| `GalleryService` | Gallery management |
+| `SampleProductService` | Sample shop product management |
+| `AdminOrderService` | Demo order admin operations |
+| `OrderService` | Demo order creation and payment |
+| `BlogService` | Blog content management |
+| `GalleryService` | Public gallery |
+| `AdminGalleryService` | Gallery admin operations |
+| `ContactService` | Contact message management |
+| `DashboardService` | Aggregated stats for admin dashboard |
+| `InventoryService` | Stock management |
 | `NewsletterService` | Newsletter subscriptions |
-| `EmailService` | Transactional email |
-| `WhatsAppService` | WhatsApp integration |
-| `UploadService` | Cloudinary upload/delete operations |
-
-Responsibilities include:
-
-- Business rules
-- Validation
-- Transactions
-- Repository interaction
-- External service interaction
-- Cloudinary integration
-- Image rollback
-- Data transformation
-
----
-
+| `EmailService` | Transactional email via Thymeleaf |
+| `WhatsAppService` | WhatsApp notifications |
+| `UploadService` | Cloudinary upload and delete |
+```
 ## 4. Repository Layer
 
-Repositories use Spring Data JPA for:
-
-- CRUD
-- JPQL/custom queries
-- Filtering
-- Pagination
-- Slug lookups
-- Product queries
-- Image queries
-- Persistence
-
-```text
-Controller
-    ↓
-Service
-    ↓
-Repository
-    ↓
-PostgreSQL
-```
+Spring Data JPA repositories handle CRUD, pagination, custom JPQL queries, slug lookups, and filtered searches.
 
 ---
 
 # 🔐 Authentication & Security
 
-The backend uses:
-
-- Spring Security
-- JWT
-- JJWT `0.12.6`
-- BCrypt password hashing
-- Stateless authentication
-- Role-based authorization
-
 Security components:
 
 ```text
-JwtTokenProvider
-JwtAuthFilter
-UserDetailsServiceImpl
-SecurityConfig
+JwtTokenProvider       — token generation and validation
+JwtAuthFilter          — per-request token extraction
+UserDetailsServiceImpl — loads user from DB for Spring Security
+SecurityConfig         — filter chain and endpoint authorization
 ```
 
 ## Login Flow
 
 ```text
 POST /api/auth/login
-        │
-        ▼
-AuthController
-        │
-        ▼
-AuthService
-        │
-        ├── Find User
-        ├── Verify Password
-        ├── Verify Account
-        └── Generate JWT
-        │
-        ▼
-AuthResponse
+        ↓
+AuthController → AuthService
+        ↓
+Find user → Verify password → Update lastLogin → Generate JWT
+        ↓
+AuthResponse { token, expiresIn, user }
+```
+
+## JWT Verify (used by Next.js middleware)
+
+```text
+GET /api/auth/verify
+Authorization: Bearer <token>
+        ↓
+JwtTokenProvider.validateToken()
+        ↓
+{ "valid": true } or 401
 ```
 
 ## Protected API Flow
 
 ```text
-Frontend
-   │
-   │ Authorization: Bearer <JWT>
-   ▼
-JwtAuthFilter
-   │
-   ▼
-Validate JWT
-   │
-   ▼
-Load User
-   │
-   ▼
-Spring Security Context
-   │
-   ▼
-Protected Controller
+Request with Authorization: Bearer <JWT>
+        ↓
+JwtAuthFilter → validate → load user → set SecurityContext
+        ↓
+@PreAuthorize check
+        ↓
+Controller method
 ```
 
 ---
 
 # 👤 Admin Roles
-
-The current role-aware authorization model includes:
-
-```text
-SUPER_ADMIN
-CONTENT_MANAGER
 ```
+The system uses four roles enforced at method level via `@PreAuthorize`:
 
-Protected upload/admin operations require an appropriate role.
+| Role | Access Level |
+|---|---|
+| `SUPER_ADMIN` | Full access — all endpoints including user management |
+| `SALES_MANAGER` | Inquiries, orders, dashboard, products |
+| `SALES_EXECUTIVE` | Inquiries, orders, dashboard (view only) |
+| `CONTENT_MANAGER` | Blog, gallery, products |
+```
+---
+
+# 👥 User Management
+```
+Admin users are managed exclusively by `SUPER_ADMIN` via `AdminUserController`.
+```
+```
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `GET` | `/api/admin/users` | List all admin users |
+| `POST` | `/api/admin/users` | Create new admin user |
+| `PATCH` | `/api/admin/users/{id}/toggle-active` | Activate or deactivate user |
+| `DELETE` | `/api/admin/users/{id}` | Permanently delete user |
+```
+Password is always BCrypt-hashed before storage and never returned in any response.
+
+### First Admin Bootstrap (dev only)
+
+The `BootstrapController` is annotated `@Profile("dev")` — it does not exist in production. Use it once to create the first `SUPER_ADMIN` when the `users` table is empty:
+
+
+
+POST /api/dev/bootstrap/admin
+
+After the first user is created, all subsequent users are created through the admin panel User Management page.
 
 ---
 
 # 📦 Product & Inventory System
 
-The product domain supports:
-
-- Product catalog
-- Product details
-- Slug-based lookup
-- Quantity-based pricing tiers
-- Inventory support
-- Multiple product images
-- Primary image
-- Image ordering
-
 ### Product entities
 
 ```text
-Product
-ProductImage
-ProductPricingTier
+Product → ProductPricingTier (one-to-many)
+Product → ProductImage (one-to-many)
+Product → ProductInventory (one-to-one)
 ```
 
-### Example product relationship
+### Inventory tracking
 
 ```text
-Product
-  │
-  ├── ProductPricingTier
-  ├── ProductPricingTier
-  │
-  ├── ProductImage
-  ├── ProductImage
-  ├── ProductImage
-  └── ProductImage
+stock_qty       — total units on hand
+reserved_qty    — units held for pending orders
+available_qty   — stock_qty - reserved_qty (computed)
+reorder_level   — triggers low-stock alert
 ```
+
+---
+
+# 🛍️ Sample Products
+
+A separate product catalog for the storefront sample shop:
+
+```text
+SampleProduct → SampleProductImage (one-to-many)
+```
+
+Sample products have independent pricing (`sample_price`, `bulk_price`), shipping days, and max sample quantity per order. They are managed through `AdminSampleProductController` and browsed publicly via `SampleProductController`.
 
 ---
 
 # 🖼️ Product Image Management
 
-Products support **multiple images**.
+Images are stored in Cloudinary; PostgreSQL stores metadata only.
 
-Images are stored in Cloudinary, while PostgreSQL stores their metadata.
-
-## ProductImage Metadata
-
-```text
-id
-product_id
-image_url
-public_id
-sort_order
-is_primary
-created_at
+## Upload Rules
 ```
-
-## Current Upload Rules
-
-| Rule | Current Value |
+| Rule | Value |
 |---|---|
-| Maximum images per product | 8 |
-| Maximum file size | 5 MB per image |
-| JPEG | Supported |
-| PNG | Supported |
-| WEBP | Supported |
-| GIF | Supported |
+| Max images per product | 8 |
+| Max file size | 5 MB |
+| Formats | JPEG, PNG, WEBP, GIF |
+```
+## Transformation URLs (returned in response)
+```
+| Field | Size | Usage |
+|---|---|---|
+| `thumbnailUrl` | 150 × 150 | Card previews |
+| `listingUrl` | 600 × 600 | Product listing |
+| `detailUrl` | 1000 × 1000 | Product detail page |
+```
+## Upload Rollback
 
-The backend validates files before uploading them to Cloudinary.
+If a bulk upload partially fails, already-uploaded Cloudinary images are deleted to prevent orphaned files.
 
 ---
 
 # ☁️ Cloudinary Integration
 
-Cloudinary is used for product and gallery image storage.
-
 ```text
-CloudinaryConfig
-       ↓
-UploadService
-       ↓
-ProductImageService
-       ↓
-ProductImage Entity
-       ↓
-PostgreSQL Metadata
+CloudinaryConfig → UploadService → ProductImageService / AdminGalleryService
 ```
 
-Cloudinary responsibilities:
+Responsibilities: secure HTTPS URLs, image transformations, public ID management, deletion support.
 
-- Image storage
-- Secure HTTPS URLs
-- Image transformations
-- Image resizing
-- Automatic WebP conversion
-- Public ID management
-- Image deletion support
-
-Configured transformation size is approximately:
-
-```text
-1200 × 1200
-```
+> `CLOUDINARY_API_SECRET` must never be exposed to the browser or committed to version control.
 
 ---
 
-# 📤 Image Upload Architecture
+# 🗄️ Database Architecture
 
-Cloudinary credentials are never exposed to the browser.
-
-```text
-Admin Browser
-     │
-     │ Multipart File
-     ▼
-Next.js Route Handler
-/api/admin/upload/image
-     │
-     │ JWT Bearer Token
-     ▼
-Spring Boot
-/api/upload/image
-     │
-     ▼
-UploadService
-     │
-     ▼
-Cloudinary
-     │
-     ▼
-secure_url + public_id
-     │
-     ▼
-Next.js
-     │
-     ▼
-Admin UI
-```
-
----
-
-# 📦 Product Image Upload Flow
-
-When creating a product:
-
-```text
-1. Admin selects images
-        ↓
-2. Frontend validates files
-        ↓
-3. Maximum 8 images
-        ↓
-4. Maximum 5 MB/image
-        ↓
-5. Duplicate files rejected
-        ↓
-6. Images uploaded to Cloudinary
-        ↓
-7. Cloudinary returns URL + public ID
-        ↓
-8. Product is created
-        ↓
-9. ProductImage records are saved
-        ↓
-10. First/selected image becomes primary
-```
-
----
-
-# 🔄 Image Upload Rollback
-
-Bulk image uploads include rollback protection.
-
-Example:
-
-```text
-Image 1 → Success
-Image 2 → Success
-Image 3 → Success
-Image 4 → FAILED
-```
-
-The service attempts to remove already-uploaded Cloudinary images:
-
-```text
-Upload Failure
-      ↓
-Rollback uploaded Cloudinary images
-      ↓
-Return error
-```
-
-This helps prevent orphaned Cloudinary files when a multi-image upload partially fails.
-
----
-
-# 📐 Image Transformation URLs
-
-`ProductImageResponse` provides frontend-ready image URLs.
-
-| Response Field | Size | Usage |
-|---|---:|---|
-| `thumbnailUrl` | 150 × 150 | Small previews |
-| `listingUrl` | 600 × 600 | Product listing |
-| `detailUrl` | 1000 × 1000 | Product detail |
-
-The frontend does not need to construct Cloudinary transformation URLs manually.
-
----
-
-# 🗄️ Product Images Database
-
-Migration:
-
-```text
-V4__add_product_images.sql
-```
-
-The table contains:
-
-```sql
-product_images (
-    id BIGSERIAL PRIMARY KEY,
-    product_id BIGINT REFERENCES products(id) ON DELETE CASCADE,
-    image_url VARCHAR(1000) NOT NULL,
-    public_id VARCHAR(500) NOT NULL,
-    sort_order INTEGER DEFAULT 0,
-    is_primary BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-```
-
-A partial unique index ensures that each product can have only one primary image:
-
-```sql
-CREATE UNIQUE INDEX idx_product_images_primary
-ON product_images (product_id)
-WHERE is_primary = TRUE;
-```
-
----
-
-# 🧹 Existing Product Image Migration
-
-Products that previously stored a single image in `products.image` can be migrated into the new `product_images` structure.
-
-Previous model:
-
-```text
-Product
-  └── image
-```
-
-Current model:
-
-```text
-Product
-  ├── ProductImage
-  ├── ProductImage
-  ├── ProductImage
-  └── ProductImage
-```
-
-This allows multiple images while maintaining compatibility with existing product data.
-
----
-
-# 🐘 Database Architecture
-
-PostgreSQL is the primary database.
-
-Major tables include:
+## Tables
 
 ```text
 users
@@ -781,166 +642,200 @@ inquiry_notes
 products
 product_pricing_tiers
 product_images
+product_inventory
+sample_products
+sample_product_images
 blog_posts
 gallery_items
+catalogue_requests
+contact_messages
 demo_orders
 newsletter_subscribers
 ```
 
-Persistence stack:
+## Schema Management
+
+Flyway owns the schema exclusively. Hibernate is set to `ddl-auto=none` in all profiles — it never alters the database.
 
 ```text
-Spring Data JPA
-       +
-Hibernate
-       +
-PostgreSQL
+Spring Data JPA + Hibernate + PostgreSQL
+Schema controlled by: Flyway only
+ddl-auto: none (all profiles)
 ```
 
 ---
 
 # 🔄 Flyway Migrations
 
-Database schema changes are managed through:
-
 ```text
 src/main/resources/db/migration/
 ```
-
-Current documented migrations include:
-
-```text
-V1__create_tables.sql
-V2__seed_admin_user.sql
-V3__...
-V4__add_product_images.sql
 ```
+| File | Description |
+|---|---|
+| `V1__create_tables.sql` | All core tables, indexes, triggers |
+| `V2__seed_admin_user.sql` | Default SUPER_ADMIN seed (change password immediately) |
+| `V3__add_inventory_and_catalogue.sql` | `product_inventory` and `catalogue_requests` tables |
+| `V4__add_product_images.sql` | `product_images` table and image migration |
+| `V6__create_sample_products.sql` | `sample_products` and `sample_product_images` tables |
+| `V7__create_contact_messages.sql` | `contact_messages` table |
+| `V8__gallery_files_fields.sql` | Gallery file type columns |
+| `V9__gallery_cloudinary_fields.sql` | Cloudinary columns, removes legacy local-disk columns |
+| `V10__add_blog_featured_image_public_id.sql` | `featured_image_public_id` on `blog_posts` |
+| `V11__baseline_no_op.sql` | Baseline marker — confirms `ddl-auto=none` takeover |
+```
+> V5 was intentionally removed (duplicate). `spring.flyway.out-of-order=true` is set to handle the gap.
 
-## V1 — Create Tables
+### Key Flyway properties
 
-Creates the foundational database structure including:
-
-- Tables
-- Primary keys
-- Foreign keys
-- Indexes
-- JSONB columns where required
-- Database constraints
-- Required triggers
-
-## V2 — Seed Admin
-
-Creates the initial administrator account using a BCrypt password hash.
-
-> Change the default admin password immediately after the first login.
-
-## V4 — Product Images
-
-Creates the `product_images` table and migrates existing product image data.
-
-> The exact migration history is determined by the files present in `src/main/resources/db/migration/`.
+```properties
+spring.flyway.enabled=true
+spring.flyway.out-of-order=true
+spring.flyway.baseline-on-migrate=true
+spring.jpa.hibernate.ddl-auto=none
+```
 
 ---
 
 # 🔌 REST API
 
-The backend exposes public and protected REST APIs.
-
 ## Authentication
-
+```
 | Method | Endpoint | Auth | Purpose |
 |---|---|---|---|
-| `POST` | `/api/auth/login` | None | Admin login |
-
+| `POST` | `/api/auth/login` | Public | Admin login |
+| `GET` | `/api/auth/verify` | Bearer | Verify JWT (middleware) |
+```
+## User Management (SUPER_ADMIN only)
+```
+| Method | Endpoint | Auth | Purpose |
+|---|---|---|---|
+| `GET` | `/api/admin/users` | JWT | List admin users |
+| `POST` | `/api/admin/users` | JWT | Create admin user |
+| `PATCH` | `/api/admin/users/{id}/toggle-active` | JWT | Toggle active status |
+| `DELETE` | `/api/admin/users/{id}` | JWT | Delete admin user |
+```
+## Products (Public)
+```
+| Method | Endpoint | Auth | Purpose |
+|---|---|---|---|
+| `GET` | `/api/products` | Public | Product list |
+| `GET` | `/api/products/{slug}` | Public | Product by slug |
+```
+## Products (Admin)
+```
+| Method | Endpoint | Auth | Purpose |
+|---|---|---|---|
+| `GET` | `/api/admin/products` | JWT | Paginated product list |
+| `POST` | `/api/admin/products` | JWT | Create product |
+| `PATCH` | `/api/admin/products/{id}` | JWT | Update product |
+| `DELETE` | `/api/admin/products/{id}` | JWT | Soft delete |
+| `DELETE` | `/api/admin/products/{id}/permanent` | JWT | Hard delete |
+| `PUT` | `/api/admin/products/{id}/pricing` | JWT | Update pricing tiers |
+```
+## Sample Products (Public)
+```
+| Method | Endpoint | Auth | Purpose |
+|---|---|---|---|
+| `GET` | `/api/sample-products` | Public | Sample product list |
+| `GET` | `/api/sample-products/{slug}` | Public | Sample product by slug |
+```
+## Sample Products (Admin)
+```
+| Method | Endpoint | Auth | Purpose |
+|---|---|---|---|
+| `GET` | `/api/admin/sample-products` | JWT | List sample products |
+| `POST` | `/api/admin/sample-products` | JWT | Create sample product |
+| `PATCH` | `/api/admin/sample-products/{id}` | JWT | Update sample product |
+| `DELETE` | `/api/admin/sample-products/{id}` | JWT | Soft delete |
+| `DELETE` | `/api/admin/sample-products/{id}/permanent` | JWT | Hard delete |
+```
+## Inventory (Admin)
+```
+| Method | Endpoint | Auth | Purpose |
+|---|---|---|---|
+| `GET` | `/api/admin/products/inventory` | JWT | All inventory |
+| `PATCH` | `/api/admin/products/{id}/inventory` | JWT | Update stock |
+| `GET` | `/api/admin/products/inventory/low-stock` | JWT | Low stock items |
+| `GET` | `/api/admin/products/inventory/out-of-stock` | JWT | Out of stock items |
+```
+## Demo Orders
+```
+| Method | Endpoint | Auth | Purpose |
+|---|---|---|---|
+| `POST` | `/api/demo-orders` | Public | Submit demo order |
+| `GET` | `/api/orders/track` | Public | Track order by ID |
+| `GET` | `/api/admin/demo-orders` | JWT | List orders (paginated) |
+| `GET` | `/api/admin/demo-orders/{orderId}` | JWT | Order detail |
+| `PATCH` | `/api/admin/demo-orders/{orderId}/status` | JWT | Update order status |
+```
 ## Inquiries
-
+```
 | Method | Endpoint | Auth | Purpose |
 |---|---|---|---|
 | `POST` | `/api/inquiries` | Public | Submit inquiry |
 | `GET` | `/api/inquiries` | JWT | List inquiries |
-
-## Products
-
-| Method | Endpoint | Auth | Purpose |
-|---|---|---|---|
-| `GET` | `/api/products` | Public | Product list |
-| `GET` | `/api/products/{slug}` | Public | Product details |
-
-Additional admin product endpoints depend on the current `ProductController` implementation.
-
-## Product / Image Upload
-
-| Method | Endpoint | Auth | Purpose |
-|---|---|---|---|
-| `POST` | `/api/upload/image` | JWT + Role | Upload single image |
-| `POST` | `/api/upload/gallery` | JWT + Role | Upload gallery image |
-| `POST` | `/api/upload/images/bulk` | JWT + Role | Upload multiple images |
-
-Supported roles:
-
-```text
-CONTENT_MANAGER
-SUPER_ADMIN
+| `PATCH` | `/api/inquiries/{id}/status` | JWT | Update status |
+| `POST` | `/api/inquiries/{id}/notes` | JWT | Add note |
 ```
-
+## Contact Messages
+```
+| Method | Endpoint | Auth | Purpose |
+|---|---|---|---|
+| `POST` | `/api/contact` | Public | Submit contact message |
+| `GET` | `/api/admin/contact` | JWT | List messages |
+| `PATCH` | `/api/admin/contact/{id}/status` | JWT | Update status |
+```
+## Catalogue
+```
+| Method | Endpoint | Auth | Purpose |
+|---|---|---|---|
+| `POST` | `/api/catalogue/request` | Public | Request catalogue |
+| `GET` | `/api/catalogue/admin/requests` | JWT | List requests |
+```
 ## Blog
-
+```
 | Method | Endpoint | Auth | Purpose |
 |---|---|---|---|
-| `GET` | `/api/blog` | Public | Get blog posts |
-
+| `GET` | `/api/blog` | Public | Published posts |
+| `GET` | `/api/blog/{slug}` | Public | Post by slug |
+| `POST` | `/api/admin/blog` | JWT | Create post |
+| `PATCH` | `/api/admin/blog/{id}` | JWT | Update post |
+| `DELETE` | `/api/admin/blog/{id}` | JWT | Delete post |
+```
 ## Gallery
-
+```
 | Method | Endpoint | Auth | Purpose |
 |---|---|---|---|
-| `GET` | `/api/gallery` | Public | Get gallery items |
-
-## Demo Orders
-
+| `GET` | `/api/gallery` | Public | Gallery items |
+| `POST` | `/api/admin/gallery` | JWT | Add gallery item |
+| `DELETE` | `/api/admin/gallery/{id}` | JWT | Delete item |
+```
+## Image Upload
+```
 | Method | Endpoint | Auth | Purpose |
 |---|---|---|---|
-| `POST` | `/api/demo-orders` | Token | Save demo/sample order |
-
-> Swagger/OpenAPI should be used as the authoritative source for the complete endpoint list because additional controller endpoints may exist.
-
----
-
-# 📖 Swagger / OpenAPI
-
-The project uses SpringDoc OpenAPI.
-
-### Swagger UI
-
-```text
-http://localhost:8080/swagger-ui.html
+| `POST` | `/api/upload/image` | JWT | Upload single image |
+| `POST` | `/api/upload/images/bulk` | JWT | Bulk upload |
+| `POST` | `/api/upload/gallery` | JWT | Upload gallery item |
 ```
-
-### OpenAPI JSON
-
-```text
-http://localhost:8080/v3/api-docs
+## Dashboard
 ```
-
-Swagger can be used to:
-
-- View API documentation
-- Inspect request/response models
-- Test endpoints
-- Test JWT-protected endpoints
-- Verify validation rules
+| Method | Endpoint | Auth | Purpose |
+|---|---|---|---|
+| `GET` | `/api/admin/dashboard/stats` | JWT | Full dashboard stats |
+```
+## Newsletter
+```
+| Method | Endpoint | Auth | Purpose |
+|---|---|---|---|
+| `POST` | `/api/newsletter` | Public | Subscribe |
+```
+> Use Swagger/OpenAPI as the authoritative endpoint reference.
 
 ---
 
 # 📤 Standard API Response
-
-The backend uses response wrappers such as:
-
-```text
-ApiResponse
-PagedResponse
-```
-
-Example:
 
 ```json
 {
@@ -950,7 +845,7 @@ Example:
 }
 ```
 
-Example paginated response:
+Paginated response:
 
 ```json
 {
@@ -962,186 +857,64 @@ Example paginated response:
 }
 ```
 
-> The exact JSON structure depends on the implementation of the response DTOs.
-
 ---
 
 # ❌ Exception Handling
-
-Centralized exception handling is provided through:
-
-```text
-GlobalExceptionHandler
 ```
+Centralized via `GlobalExceptionHandler`.
 
-Common custom exceptions:
-
-```text
-ResourceNotFoundException
-BusinessException
-DuplicateResourceException
+| Exception | HTTP Status |
+|---|---|
+| Validation failure | 400 |
+| Unauthorized | 401 |
+| Forbidden | 403 |
+| `ResourceNotFoundException` | 404 |
+| `DuplicateResourceException` | 409 |
+| `BusinessException` | 400 |
+| Unhandled | 500 |
 ```
-
-## HTTP Status Codes
-
-| Status | Meaning |
-|---:|---|
-| `400` | Bad Request |
-| `401` | Unauthorized |
-| `403` | Forbidden |
-| `404` | Not Found |
-| `409` | Conflict / Duplicate |
-| `500` | Internal Server Error |
-
-### Error flow
-
-```text
-Invalid request
-      ↓
-Validation Exception
-```
-
-```text
-Missing database record
-      ↓
-ResourceNotFoundException
-```
-
-```text
-Business rule failure
-      ↓
-BusinessException
-```
-
-```text
-Duplicate resource
-      ↓
-DuplicateResourceException
-```
-
 ---
 
 # 📧 Email System
 
-The backend supports HTML transactional emails using Thymeleaf.
+HTML transactional emails via Thymeleaf templates:
 
 ```text
-src/main/resources/templates/
-
-├── inquiry-ack.html
-└── order-confirmation.html
+templates/email/
+├── catalogue-ack.html            — catalogue download confirmation
+├── catalogue-internal-alert.html — internal team notification
+├── contact-ack.html              — contact form confirmation
+├── contact-internal-alert.html   — internal team notification
+├── inquiry-ack.html              — inquiry submission confirmation
+├── inquiry-internal-alert.html   — internal team notification
+└── order-confirmation.html       — demo order confirmation
 ```
-
-### Inquiry Acknowledgement
-
-Sent after a customer submits an inquiry.
-
-### Order Confirmation
-
-Sent after a demo/sample order is successfully processed.
-
-Email delivery uses:
-
-```text
-Spring Mail
-    +
-SMTP
-    +
-Thymeleaf
-```
-
----
-
-# 🔌 External Integrations
-
-## ☁️ Cloudinary
-
-Used for:
-
-- Product image storage
-- Gallery image storage
-- Image transformations
-- Secure image URLs
-- Public ID management
-
-## 📧 SMTP
-
-Used for:
-
-- Inquiry acknowledgement
-- Order confirmation
-- Transactional email notifications
-
-## 💬 WhatsApp
-
-The backend contains configuration support for WhatsApp integration.
-
-## 💳 Razorpay
-
-The project contains configuration support for Razorpay payment integration.
-
-## ☁️ AWS
-
-AWS SDK v2 support is configured for cloud-related functionality where required.
-
-> Availability and activation of each external integration depend on the active configuration and implementation.
 
 ---
 
 # ⚙️ Configuration & Profiles
-
-The application uses Spring Boot properties and environment variables.
-
-```text
-src/main/resources/
-
-├── application.properties
-├── application-dev.properties
-└── application-prod.properties
 ```
-
-Test configuration:
-
-```text
-src/test/resources/
-└── application-test.properties
-```
-
 | File | Purpose |
 |---|---|
-| `application.properties` | Common configuration |
-| `application-dev.properties` | Local development |
-| `application-prod.properties` | Production |
-| `application-test.properties` | Automated tests |
+| `application.properties` | Common configuration, `ddl-auto=none`, Flyway settings |
+| `application-dev.properties` | Local dev overrides |
+| `application-prod.properties` | Production — strict settings, reduced logging |
+| `application-test.properties` | H2 in-memory for tests |
+```
+### Critical shared settings
 
-Configuration covers:
-
-- PostgreSQL
-- HikariCP
-- JPA/Hibernate
-- Flyway
-- Jackson
-- SMTP
-- JWT
-- Razorpay
-- WhatsApp
-- AWS
-- Cloudinary
-- Logging
-- Spring Profiles
-- Actuator
-- Swagger/OpenAPI
-- Thymeleaf
-- CORS
+```properties
+spring.jpa.hibernate.ddl-auto=none
+spring.flyway.enabled=true
+spring.flyway.out-of-order=true
+spring.flyway.baseline-on-migrate=true
+```
 
 ---
 
 # 🌍 Environment Variables
 
-Sensitive values must be externalized.
-
 ## Database
-
 ```text
 DB_URL
 DB_USERNAME
@@ -1149,14 +922,12 @@ DB_PASSWORD
 ```
 
 ## JWT
-
 ```text
 JWT_SECRET
 JWT_EXPIRATION
 ```
 
 ## Mail
-
 ```text
 MAIL_HOST
 MAIL_PORT
@@ -1166,14 +937,12 @@ MAIL_FROM
 ```
 
 ## Razorpay
-
 ```text
 RAZORPAY_KEY_ID
 RAZORPAY_KEY_SECRET
 ```
 
 ## WhatsApp
-
 ```text
 WHATSAPP_API_URL
 WHATSAPP_ACCESS_TOKEN
@@ -1181,7 +950,6 @@ WHATSAPP_PHONE_NUMBER_ID
 ```
 
 ## AWS
-
 ```text
 AWS_REGION
 AWS_ACCESS_KEY_ID
@@ -1190,7 +958,6 @@ AWS_S3_BUCKET
 ```
 
 ## Cloudinary
-
 ```text
 CLOUDINARY_CLOUD_NAME
 CLOUDINARY_API_KEY
@@ -1198,468 +965,110 @@ CLOUDINARY_API_SECRET
 ```
 
 ## Frontend / CORS
-
 ```text
 FRONTEND_URL
 CORS_ALLOWED_ORIGINS
 ```
 
-### Cloudinary properties
-
-```properties
-cloudinary.cloud-name=${CLOUDINARY_CLOUD_NAME}
-cloudinary.api-key=${CLOUDINARY_API_KEY}
-cloudinary.api-secret=${CLOUDINARY_API_SECRET}
-```
-
-> `CLOUDINARY_API_SECRET` must never be exposed to frontend/browser code.
+> Never commit real credentials. Use environment variables or a cloud secret manager in production.
 
 ---
 
 # 💻 Prerequisites
-
-Install:
-
+```
 | Software | Version |
 |---|---|
 | Java | 21 LTS |
 | Maven | 3.9.x |
-| PostgreSQL | Supported production release |
+| PostgreSQL | 14+ |
 | Git | Latest stable |
-| IDE | IntelliJ IDEA / Eclipse / VS Code |
-
-Verify Java:
-
-```bash
-java -version
 ```
-
-Verify Maven:
-
-```bash
-mvn -version
-```
-
-Verify PostgreSQL:
-
-```bash
-psql --version
-```
-
 ---
 
 # 🏁 Local Development Setup
 
-## Step 1 — Clone Repository
+## Step 1 — Clone
 
 ```bash
 git clone <repository-url>
-cd <backend-directory>
+cd tcc-backend
 ```
 
----
-
-## Step 2 — Create PostgreSQL Database
-
-Using PostgreSQL CLI:
-
-```bash
-createdb tcc_db_dev
-```
-
-Or:
+## Step 2 — Create Database
 
 ```sql
-CREATE DATABASE tcc_db_dev;
+CREATE DATABASE tcc_db;
 ```
-
----
 
 ## Step 3 — Configure Environment
 
-Configure development values such as:
+Copy `.env.example` to `.env` and fill in values. Never commit `.env`.
 
-```text
-DB_URL=jdbc:postgresql://localhost:5432/tcc_db_dev
-DB_USERNAME=postgres
-DB_PASSWORD=your_password
-
-JWT_SECRET=your-development-secret
-
-CLOUDINARY_CLOUD_NAME=your-cloud-name
-CLOUDINARY_API_KEY=your-api-key
-CLOUDINARY_API_SECRET=your-api-secret
-```
-
-Also configure SMTP, Razorpay, WhatsApp, AWS, and CORS variables if those integrations are enabled in the current environment.
-
-> Never commit real credentials.
-
----
-
-## Step 4 — Run Development Profile
-
-### Windows PowerShell
+## Step 4 — Run
 
 ```powershell
+# Windows
 .\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=dev"
 ```
 
-### Linux/macOS
-
 ```bash
+# Linux / macOS
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 ```
+
+Flyway runs migrations automatically on startup. The default admin credentials are seeded by V2.
+
+> **Change the default admin password immediately after first login.**
 
 ---
 
 # 🌐 Application URLs
-
-Application:
-
-```text
-http://localhost:8080
 ```
-
-Swagger:
-
-```text
-http://localhost:8080/swagger-ui.html
+| Resource | URL |
+|---|---|
+| API | `http://localhost:8089` |
+| Swagger UI | `http://localhost:8089/swagger-ui.html` |
+| OpenAPI JSON | `http://localhost:8089/api-docs` |
+| Health | `http://localhost:8089/actuator/health` |
 ```
-
-OpenAPI:
-
-```text
-http://localhost:8080/v3/api-docs
-```
-
-Health:
-
-```text
-http://localhost:8080/actuator/health
-```
-
----
-
-# ❤️ Health Monitoring
-
-Spring Boot Actuator provides application health information.
-
-### Health endpoint
-
-```text
-http://localhost:8080/actuator/health
-```
-
-Example:
-
-```json
-{
-  "status": "UP"
-}
-```
-
-The health endpoint can be used by:
-
-- Deployment platforms
-- Load balancers
-- Monitoring systems
-- Infrastructure health checks
-
 ---
 
 # 🔨 Maven Commands
 
-## Run Application
-
 ```bash
-./mvnw spring-boot:run
-```
-
-## Run Development Profile
-
-```bash
+# Run with dev profile
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
-```
 
-## Run Tests
-
-```bash
+# Run tests
 ./mvnw test
-```
 
-## Build Without Tests
-
-```bash
+# Build JAR (skip tests)
 ./mvnw clean package -DskipTests
-```
 
-## Clean Build
-
-```bash
-./mvnw clean package
-```
-
-## Run JAR
-
-```bash
-java -jar target/tcc-backend-2.0.0.jar
-```
-
-### Windows
-
-```powershell
-.\mvnw.cmd test
-```
-
-```powershell
-.\mvnw.cmd clean package
-```
-
----
-
-# 🧪 Testing
-
-The backend includes unit and controller/application tests.
-
-Documented tests include:
-
-```text
-InquiryServiceTest.java
-InquiryControllerTest.java
-ApplicationTests.java
-```
-
-## Unit Tests
-
-`InquiryServiceTest` uses Mockito to test service/business logic independently.
-
-## Controller Tests
-
-`InquiryControllerTest` uses MockMvc to test:
-
-- HTTP requests
-- HTTP responses
-- Validation
-- Controller behavior
-
-## Application Test
-
-`ApplicationTests` verifies that the Spring application context starts successfully.
-
-Run all tests:
-
-```bash
-./mvnw test
-```
-
----
-
-# 🔄 Request Processing Flow
-
-Example inquiry request:
-
-```text
-Frontend
-   │
-   │ POST /api/inquiries
-   ▼
-InquiryController
-   │
-   │ @Valid Request DTO
-   ▼
-Validation
-   │
-   ▼
-InquiryService
-   │
-   ├── Business validation
-   ├── Generate reference
-   ├── Save inquiry
-   └── Send notification
-   │
-   ▼
-InquiryRepository
-   │
-   ▼
-PostgreSQL
-```
-
----
-
-# 🔢 Reference Number Generator
-
-The backend includes:
-
-```text
-ReferenceGenerator
-```
-
-Reference format:
-
-```text
-TCC-2026-XXXXX
-```
-
-Example:
-
-```text
-TCC-2026-48321
-```
-
-This provides a human-readable reference number for inquiries/orders.
-
----
-
-# 🔗 Slug Utility
-
-The application includes:
-
-```text
-SlugUtils
-```
-
-Example:
-
-```text
-Premium Corporate Gift Box
-```
-
-becomes:
-
-```text
-premium-corporate-gift-box
-```
-
-This supports readable URLs such as:
-
-```text
-/api/products/premium-corporate-gift-box
+# Run production JAR
+java -jar target/tcc-backend-*.jar --spring.profiles.active=prod
 ```
 
 ---
 
 # 🛠️ Development Guidelines
 
-When adding a new feature, follow this sequence:
+When adding a new feature:
 
 ```text
-1. Create / Update Entity
-        ↓
-2. Create Repository
-        ↓
-3. Create Request DTO
-        ↓
-4. Create Response DTO
-        ↓
-5. Implement Service
-        ↓
-6. Create Controller Endpoint
-        ↓
-7. Add Validation
-        ↓
-8. Add Exception Handling
-        ↓
-9. Add Flyway Migration
-        ↓
-10. Add Unit / Integration Tests
-        ↓
-11. Test API using Swagger / Postman
-        ↓
-12. Update README
+1. Flyway migration (if schema changes)
+2. Entity
+3. Repository
+4. Request DTO
+5. Response DTO
+6. Service
+7. Controller
+8. SecurityConfig (if new public endpoint)
+9. Tests
+10. Update README
 ```
 
-## Important Architecture Rule
-
-Do not put business logic directly inside controllers.
-
-Preferred architecture:
-
-```text
-Controller
-    ↓
-Service
-    ↓
-Repository
-    ↓
-Database
-```
-
----
-
-# 🌿 Git Workflow
-
-Recommended branch structure:
-
-```text
-main
-│
-├── feature/product-api
-├── feature/product-images
-├── feature/inquiry-management
-├── feature/authentication
-├── feature/order-management
-├── feature/blog
-└── fix/...
-```
-
-Recommended workflow:
-
-```text
-Create Branch
-     ↓
-Implement Feature
-     ↓
-Write Tests
-     ↓
-Run Tests
-     ↓
-Run Clean Build
-     ↓
-Code Review
-     ↓
-Pull Request
-     ↓
-Merge
-```
-
----
-
-# 🚫 Git Secret Management
-
-Never commit:
-
-```text
-.env
-.env.*
-
-database passwords
-JWT secrets
-SMTP passwords
-API tokens
-AWS credentials
-Razorpay secrets
-WhatsApp tokens
-Cloudinary API secret
-production credentials
-```
-
-Recommended `.gitignore`:
-
-```gitignore
-target/
-.idea/
-.vscode/
-*.iml
-
-.env
-.env.*
-
-*.log
-logs/
-```
-
-Production configuration may be version-controlled only when sensitive values are injected through environment variables or a secret manager.
+**Never put business logic in controllers. Never edit a Flyway migration after it has been applied.**
 
 ---
 
@@ -1667,386 +1076,107 @@ Production configuration may be version-controlled only when sensitive values ar
 
 Before production deployment:
 
-- [ ] Change default admin password
-- [ ] Generate strong random JWT secret
-- [ ] Never commit passwords
-- [ ] Never commit API keys
-- [ ] Never expose Cloudinary API secret
+- [ ] Change default admin password (V2 seed)
+- [ ] Generate strong random JWT secret (min 256-bit)
+- [ ] Set `ddl-auto=none` in all profiles
+- [ ] Verify Flyway migration sequence — no gaps, no duplicates
+- [ ] Never commit `.env` or credentials
+- [ ] Never expose `CLOUDINARY_API_SECRET` to browser
 - [ ] Enable HTTPS
-- [ ] Restrict CORS
-- [ ] Use production PostgreSQL
-- [ ] Use `ddl-auto=validate`
-- [ ] Enable Flyway
-- [ ] Configure SMTP securely
-- [ ] Secure Razorpay credentials
-- [ ] Secure WhatsApp credentials
-- [ ] Secure AWS credentials
-- [ ] Secure Cloudinary credentials
-- [ ] Review Swagger exposure
-- [ ] Review Actuator exposure
+- [ ] Restrict CORS to production domain
+- [ ] Review all `permitAll()` endpoints in `SecurityConfig`
+- [ ] Disable or restrict Swagger in production
+- [ ] Restrict Actuator endpoints in production
 - [ ] Configure rate limiting
 - [ ] Configure database backups
-- [ ] Configure application monitoring
-- [ ] Review authorization rules
-- [ ] Review public endpoints
-- [ ] Review file upload validation
-- [ ] Review Cloudinary upload limits
-- [ ] Review image cleanup strategy
-
----
-
-# 🚀 Production Profile
-
-Production configuration:
-
-```text
-application-prod.properties
-```
-
-Production should use:
-
-```text
-Flyway = enabled
-JPA ddl-auto = validate
-Production PostgreSQL
-Production secrets
-Restricted CORS
-Reduced logging
-HTTPS
-```
-
-Run the production JAR:
-
-```bash
-java -jar target/tcc-backend-2.0.0.jar \
-  --spring.profiles.active=prod
-```
-
-Production secrets should be supplied through environment variables or a cloud secret manager.
+- [ ] Remove or restrict `BootstrapController` (already `@Profile("dev")`)
+- [ ] Review `@PreAuthorize` on all admin endpoints
 
 ---
 
 # 📦 Production Deployment Checklist
 
-## DATABASE
+## Database
+- [ ] Production PostgreSQL provisioned
+- [ ] Database user with least-privilege permissions
+- [ ] Flyway migration history verified on fresh DB
+- [ ] Backups configured
 
-- [ ] Production PostgreSQL created
-- [ ] Database user configured
-- [ ] Database permissions reviewed
-- [ ] Database backup configured
-- [ ] Flyway migration history verified
-- [ ] Product image migration verified
+## Application
+- [ ] JAR built with `./mvnw clean package -DskipTests`
+- [ ] All environment variables set
+- [ ] `spring.profiles.active=prod`
+- [ ] Health endpoint responding
 
-## APPLICATION
-
-- [ ] Production JAR built
-- [ ] Environment variables configured
-- [ ] Production profile enabled
-- [ ] Health endpoint working
-
-## SECURITY
-
-- [ ] JWT secret replaced
+## Security
+- [ ] JWT secret rotated
 - [ ] Admin password changed
-- [ ] CORS configured
-- [ ] HTTPS enabled
-- [ ] Authorization reviewed
-- [ ] Rate limiting configured
-- [ ] File upload restrictions verified
+- [ ] CORS locked to production domain
+- [ ] HTTPS enforced
+- [ ] `ddl-auto=none` confirmed
 
-## DATABASE MIGRATION
+## Integrations
+- [ ] SMTP tested
+- [ ] Cloudinary credentials set
+- [ ] Razorpay credentials set (if live)
+- [ ] WhatsApp credentials set (if live)
 
-- [ ] Flyway enabled
-- [ ] `ddl-auto=validate`
-- [ ] Migration scripts tested
-- [ ] Product image migration verified
-
-## CLOUDINARY
-
-- [ ] Cloudinary account configured
-- [ ] Cloud name configured
-- [ ] API key configured
-- [ ] API secret secured
-- [ ] Upload folders reviewed
-- [ ] Image size restrictions verified
-- [ ] Allowed formats verified
-- [ ] Image cleanup strategy configured
-
-## INTEGRATIONS
-
-- [ ] SMTP configured
-- [ ] Email templates tested
-- [ ] Razorpay configured if required
-- [ ] WhatsApp configured if required
-- [ ] AWS configured if required
-
-## MONITORING
-
-- [ ] Actuator configured
-- [ ] Application logs available
-- [ ] Error monitoring configured
-- [ ] Database monitoring configured
-- [ ] Cloudinary usage monitored
-
-## API
-
-- [ ] Swagger reviewed
-- [ ] Public endpoints reviewed
-- [ ] Protected endpoints tested
-- [ ] Upload endpoints tested
-- [ ] Postman/API tests completed
-
----
-
-# 🏭 Production Readiness
-
-The project follows a production-oriented backend architecture with:
-
-- Layered architecture
-- RESTful APIs
-- DTO separation
-- JWT authentication
-- BCrypt password hashing
-- Role-based security
-- PostgreSQL
-- Flyway migrations
-- Product image management
-- Cloudinary integration
-- Request validation
-- Centralized exception handling
-- HikariCP connection pooling
-- Environment-specific configuration
-- Swagger/OpenAPI
-- Actuator health monitoring
-- Unit tests
-- Controller/integration tests
-- External service integration
-- Image upload rollback handling
-
-> A production-oriented architecture does not automatically guarantee production readiness.
-
-Before going live, validate:
-
-- Infrastructure
-- Security
-- Database
-- Backups
-- Monitoring
-- Logging
-- Secrets
-- Rate limiting
-- CORS
-- Authentication
-- Authorization
-- File uploads
-- Cloudinary storage
-- Performance
-- Scalability
-- Disaster recovery
+## Monitoring
+- [ ] Actuator health configured
+- [ ] Application logs streaming
+- [ ] Error alerting configured
 
 ---
 
 # 🔮 Future Enhancements
 
-## Authentication
-
-- Refresh tokens
-- Password reset
-- Email verification
-- Multi-role administration
-- Account lockout
+- Refresh tokens and token revocation
+- Password reset via email
+- Account lockout after failed attempts
 - MFA
-- Session/device management
 - Audit logging
-
-## Product System
-
-- Advanced filtering
-- Product search
-- Product categories
-- Advanced inventory management
-- Product variants
-- Bulk pricing
-- Customization options
-- Product image deletion
-- Image replacement
-- Image optimization
-
-## Orders
-
-- Complete order lifecycle
-- Full payment processing
-- Razorpay payment workflow
-- Order tracking
+- Redis caching for dashboard stats
+- Full Razorpay payment lifecycle
 - Invoice generation
-- Customer order history
-
-## Performance
-
-- Redis caching
-- Database query optimization
-- Pagination improvements
-- Async processing
-- Background jobs
-
-## Infrastructure
-
-- Docker
-- AWS deployment
-- CI/CD
-- Load balancing
-- Centralized logging
-- Monitoring
-- Automated backups
-- Secret manager integration
-
----
-
-# 📊 Backend Capability Overview
-
-```text
-                    THE CHOICE COMPANY
-                            │
-                            ▼
-                   ┌─────────────────┐
-                   │ Spring Boot API │
-                   └────────┬────────┘
-                            │
-        ┌───────────────────┼───────────────────┐
-        │                   │                   │
-        ▼                   ▼                   ▼
- Authentication      Product System       Inquiry System
-        │                   │                   │
-        │                   ├── Pricing         ├── Inquiries
-        │                   ├── Inventory       ├── Notes
-        │                   ├── Images          └── Notifications
-        │                   └── Cloudinary
-        │
-        └─────────────────────────────────────────────┐
-                                                      │
-        ┌───────────────────┬───────────────────┬─────┘
-        ▼                   ▼                   ▼
-   Content System       Order System       Newsletter
-        │                   │                   │
-        ├── Blog            └── Demo Orders     └── Subscribers
-        └── Gallery
-                            │
-                            ▼
-                    PostgreSQL Database
-                            │
-                            ▼
-                  External Integrations
-                 ┌──────────┼──────────┐
-                 ▼          ▼          ▼
-              Email      WhatsApp    Razorpay
-                            │
-                            ▼
-                        Cloudinary
-```
+- Docker and CI/CD pipeline
+- AWS/cloud deployment automation
+- Rate limiting middleware
 
 ---
 
 # 📝 Project Summary
 
-The **The Choice Company Backend** is a Spring Boot REST API developed to support a corporate gifting platform.
-
-The backend provides:
-
 ```text
-Authentication
-      +
-Authorization
-      +
-Product Catalog
-      +
-Pricing Tiers
-      +
-Inventory Support
-      +
-Multiple Product Images
-      +
-Cloudinary Storage
-      +
-Customer Inquiries
-      +
-Inquiry Notes
-      +
-Demo Orders
-      +
+Authentication & RBAC (4 roles)
+User Management (SUPER_ADMIN)
+Product Catalog + Pricing Tiers
+Sample Product Shop
+Product Inventory
+Multiple Cloudinary Images per Product
+Customer Inquiries + Notes
+Demo Orders + Status Tracking
+Order Tracking (public)
+Contact Messages
+Catalogue Download Requests
 Blog
-      +
-Gallery
-      +
-Catalogue Requests
-      +
+Gallery (Cloudinary)
 Newsletter
-      +
-Email Notifications
-      +
+Admin Dashboard Stats
+Transactional Email (7 templates)
 WhatsApp Integration
-      +
 Razorpay Integration
-      +
-PostgreSQL
-      +
-Flyway
-      +
+PostgreSQL + Flyway (ddl-auto=none)
 JWT Security
-      +
 Swagger / OpenAPI
-      +
-Testing
+Spring Boot Actuator
 ```
-
-The architecture is designed to support future expansion into a complete corporate gifting platform with:
-
-- Admin dashboard
-- Customer management
-- Bulk corporate orders
-- Payment processing
-- Order tracking
-- Product customization
-- Product variants
-- Multiple product images
-- Cloud image storage
-- Notifications
-- Redis caching
-- Audit logging
-- Monitoring
-- CI/CD
-- AWS/cloud deployment
 
 ---
 
 # 📄 License
 
-Proprietary software developed for:
-
-**The Choice Company**
-
+Proprietary software developed for **The Choice Company**.
 All rights reserved.
-
----
-
-# 👨‍💻 Maintainer
-
-**The Choice Company — Backend Team**
-
-### Primary Technologies
-
-- Java 21
-- Spring Boot 3.3.2
-- Spring Security
-- Spring Data JPA
-- Hibernate
-- PostgreSQL
-- JWT
-- Flyway
-- Cloudinary
-- REST API
-- Maven
-- Swagger / OpenAPI
-- Thymeleaf
 
 ---
 

@@ -37,7 +37,18 @@
 
   <!-- ── DEPENDENCIES ─────────────────────────────────────────────────── -->
   <dependencies>
-
+		<!-- Source: https://mvnrepository.com/artifact/com.bucket4j/bucket4j-core -->
+<dependency>
+    <groupId>com.bucket4j</groupId>
+    <artifactId>bucket4j-core</artifactId>
+    <version>8.10.1</version>
+    <scope>compile</scope>
+</dependency>
+<dependency>
+    <groupId>com.github.ben-manes.caffeine</groupId>
+    <artifactId>caffeine</artifactId>
+    <version>3.1.8</version>
+</dependency>
     <!-- ── SPRING BOOT STARTERS ───────────────────────────────────────── -->
     <!-- Web: REST controllers, Jackson JSON, Tomcat embedded -->
     <dependency>
@@ -193,6 +204,12 @@
       <artifactId>h2</artifactId>
       <scope>test</scope>
     </dependency>
+    
+    <dependency>
+    <groupId>net.coobird</groupId>
+    <artifactId>thumbnailator</artifactId>
+    <version>0.4.20</version>
+</dependency>
 
   </dependencies>
 

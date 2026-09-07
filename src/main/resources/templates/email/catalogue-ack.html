@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body style="font-family:Arial,sans-serif;color:#0D1B2A;">
+  <div style="max-width:520px;margin:0 auto;padding:24px;">
+    <h2 style="color:#0D1B2A;">Here's your catalogue</h2>
+    <p>Thanks for your interest in The Choice Company. Your full product catalogue is ready:</p>
+    <p style="margin:24px 0;">
+      <a th:href="${downloadUrl}" style="background:#1A5C4A;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">
+        Download Catalogue
+      </a>
+    </p>
+    <p style="color:#888;font-size:13px;">This link stays active for 24 hours. If it expires, just request it again from our site.</p>
+  </div>
+</body>
+</html>

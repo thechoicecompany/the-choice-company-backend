@@ -27,14 +27,35 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Query("SELECT p FROM Product p WHERE p.isFeatured = true AND p.isActive = true ORDER BY p.sortOrder ASC")
     List<Product> findFeatured(Pageable pageable);
 
-    @EntityGraph(attributePaths = {"pricingTiers"})
-    @Query("SELECT p FROM Product p WHERE " +
-           "p.isActive = true AND " +
-           "(:category IS NULL OR p.categorySlug = :category) AND " +
-           "(:featured IS NULL OR p.isFeatured = :featured)")
+    // ── No @EntityGraph here — native queries cannot use EntityGraphs ─────
+    @Query(value = """
+        SELECT * FROM public.products p
+        WHERE p.is_active = true
+          AND (:category IS NULL OR p.category_slug = :category)
+          AND (:featured  IS NULL OR p.is_featured  = :featured)
+          AND (:occasion  IS NULL OR p.tags::text   LIKE CONCAT('%"', :occasion, '"%'))
+          AND (:minPrice  IS NULL OR p.base_price  >= :minPrice)
+          AND (:maxPrice  IS NULL OR p.base_price  <= :maxPrice)
+          AND (:moq       IS NULL OR p.moq         <= :moq)
+        """,
+        countQuery = """
+        SELECT COUNT(*) FROM public.products p
+        WHERE p.is_active = true
+          AND (:category IS NULL OR p.category_slug = :category)
+          AND (:featured  IS NULL OR p.is_featured  = :featured)
+          AND (:occasion  IS NULL OR p.tags::text   LIKE CONCAT('%"', :occasion, '"%'))
+          AND (:minPrice  IS NULL OR p.base_price  >= :minPrice)
+          AND (:maxPrice  IS NULL OR p.base_price  <= :maxPrice)
+          AND (:moq       IS NULL OR p.moq         <= :moq)
+        """,
+        nativeQuery = true)
     Page<Product> findWithFilters(
         @Param("category") String category,
-        @Param("featured") Boolean featured,
+        @Param("featured")  Boolean featured,
+        @Param("occasion")  String occasion,
+        @Param("minPrice")  java.math.BigDecimal minPrice,
+        @Param("maxPrice")  java.math.BigDecimal maxPrice,
+        @Param("moq")       Integer moq,
         Pageable pageable
     );
 

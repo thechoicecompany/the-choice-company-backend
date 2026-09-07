@@ -1,96 +1,160 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <title>Order Confirmed — The Choice Company</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
 </head>
-<body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:30px 0;">
-    <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0"
-             style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+<body style="margin:0;padding:0;background:#F9F7F3;font-family:Arial,sans-serif;">
 
-        <!-- Header -->
-        <tr>
-          <td style="background:#0D1B2A;padding:28px 32px;text-align:center;">
-            <h1 style="margin:0;color:#C89B3C;font-size:22px;">THE CHOICE COMPANY</h1>
-            <p style="margin:6px 0 0;color:#ffffff;opacity:0.65;font-size:13px;">
-              Order Confirmed ✓
-            </p>
-          </td>
-        </tr>
-        <tr><td style="background:#C89B3C;height:4px;"></td></tr>
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#F9F7F3;padding:32px 16px;">
+  <tr><td align="center">
+    <table width="600" cellpadding="0" cellspacing="0"
+           style="background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;max-width:600px;width:100%;">
 
-        <tr>
-          <td style="padding:36px 32px;">
-            <h2 style="color:#0D1B2A;margin:0 0 16px;">Your sample is on its way! 🎉</h2>
-            <p style="color:#555;font-size:15px;margin:0 0 24px;">
-              Dear <strong th:text="${order.customerName}">Customer</strong>,
-              your sample purchase has been confirmed and payment received.
-              We will deliver within <strong>7–10 working days</strong>.
-            </p>
+      <!-- Header -->
+      <tr>
+        <td style="background:#0D1B2A;padding:24px;text-align:center;">
+          <h1 style="color:#C89B3C;margin:0;font-size:24px;font-family:Georgia,serif;">
+            The Choice Company
+          </h1>
+          <p style="color:rgba(255,255,255,0.6);margin:6px 0 0;font-size:12px;letter-spacing:1px;">
+            ORDER CONFIRMED ✓
+          </p>
+        </td>
+      </tr>
 
-            <!-- Order reference -->
-            <div style="background:#F9F7F3;border-left:4px solid #C89B3C;
-                        border-radius:8px;padding:20px 24px;margin:0 0 28px;">
-              <p style="margin:0;font-size:13px;color:#888;text-transform:uppercase;">Order ID</p>
-              <h2 style="margin:8px 0 4px;color:#0D1B2A;font-size:24px;"
-                  th:text="${order.orderId}">TCC-DEMO-2026-00000</h2>
-              <p style="margin:0;font-size:12px;color:#aaa;"
-                 th:text="'Payment ID: ' + ${order.razorpayPaymentId}">Payment ID</p>
-            </div>
+      <!-- Body -->
+      <tr>
+        <td style="padding:32px 28px;">
 
-            <!-- Amount summary -->
-            <table width="100%" cellpadding="0" cellspacing="0"
-                   style="border-collapse:collapse;font-size:14px;margin:0 0 28px;">
+          <h2 style="color:#0D1B2A;margin:0 0 8px;font-family:Georgia,serif;font-size:22px;">
+            Your sample is on its way! 🎉
+          </h2>
+          <p style="color:#6b7280;font-size:14px;margin:0 0 24px;">
+            Dear <strong th:text="${order.customerName}">Customer</strong>,<br>
+            Your payment has been confirmed and your sample order is being processed.
+            Expected delivery: <strong>7–10 working days</strong>.
+          </p>
+
+          <!-- Order ID box -->
+          <table width="100%" cellpadding="0" cellspacing="0"
+                 style="background:#F9F7F3;border-radius:8px;border-left:4px solid #C89B3C;margin-bottom:24px;">
+            <tr>
+              <td style="padding:16px 20px;">
+                <p style="margin:0;font-size:11px;color:#9ca3af;letter-spacing:1px;text-transform:uppercase;">
+                  Order Reference
+                </p>
+                <p style="margin:6px 0 4px;font-size:22px;font-weight:bold;color:#0D1B2A;font-family:Georgia,serif;"
+                   th:text="${order.orderId}">TCC-DEMO-2026-XXXXX</p>
+                <p style="margin:0;font-size:11px;color:#9ca3af;"
+                   th:text="'Payment ID: ' + ${order.razorpayPaymentId}">Payment ID: pay_xxx</p>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Items table -->
+          <table width="100%" cellpadding="0" cellspacing="0"
+                 style="font-size:13px;margin-bottom:20px;border-collapse:collapse;">
+            <thead>
               <tr style="background:#0D1B2A;">
-                <th style="padding:10px 14px;color:#C89B3C;text-align:left;">Item</th>
-                <th style="padding:10px 14px;color:#C89B3C;text-align:center;">Qty</th>
-                <th style="padding:10px 14px;color:#C89B3C;text-align:right;">Amount</th>
+                <th style="padding:10px 12px;color:#C89B3C;text-align:left;font-weight:600;">Product</th>
+                <th style="padding:10px 12px;color:#C89B3C;text-align:center;font-weight:600;">Qty</th>
+                <th style="padding:10px 12px;color:#C89B3C;text-align:right;font-weight:600;">Amount</th>
               </tr>
-              <!-- Items rendered dynamically in service layer -->
-              <tr>
-                <td colspan="2" style="padding:10px 14px;font-weight:bold;color:#0D1B2A;">
-                  Total (incl. 18% GST)
-                </td>
-                <td style="padding:10px 14px;text-align:right;font-weight:bold;color:#C89B3C;font-size:16px;"
-                    th:text="'₹' + ${#numbers.formatDecimal(order.total,1,'COMMA',2,'POINT')}">
-                  ₹0.00
-                </td>
+            </thead>
+            <tbody>
+              <tr th:each="item : ${order.items}" style="border-bottom:1px solid #f3f4f6;">
+                <td style="padding:10px 12px;color:#374151;"
+                    th:text="${item['name']}">Product Name</td>
+                <td style="padding:10px 12px;color:#374151;text-align:center;"
+                    th:text="${item['quantity']}">1</td>
+                <td style="padding:10px 12px;color:#374151;text-align:right;"
+                    th:text="'₹' + ${#numbers.formatInteger(item['subtotal'], 1, 'COMMA')}">₹0</td>
               </tr>
-            </table>
+            </tbody>
+            <tfoot>
+              <!-- GST row -->
+              <tr style="background:#fafafa;">
+                <td colspan="2" style="padding:8px 12px;font-size:12px;color:#9ca3af;">
+                  GST (18%)
+                </td>
+                <td style="padding:8px 12px;font-size:12px;color:#9ca3af;text-align:right;"
+                    th:text="'₹' + ${#numbers.formatInteger(order.gstAmount, 1, 'COMMA')}">₹0</td>
+              </tr>
+              <!-- Total row — FIXED: merged both style attributes into one -->
+              <tr style="background:#fafafa;border-top:2px solid #e5e7eb;">
+                <td colspan="2"
+                    style="padding:12px;font-weight:bold;color:#0D1B2A;font-size:15px;">
+                  Total Paid
+                </td>
+                <td style="padding:12px;font-weight:bold;text-align:right;font-size:15px;color:#C89B3C;"
+                    th:text="'₹' + ${#numbers.formatInteger(order.total, 1, 'COMMA')}">₹0</td>
+              </tr>
+            </tfoot>
+          </table>
 
-            <!-- Bulk upsell -->
-            <div style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:10px;
-                        padding:20px 24px;margin:0 0 24px;">
-              <h4 style="color:#166534;margin:0 0 8px;">👍 Happy with the quality?</h4>
-              <p style="color:#166534;font-size:14px;margin:0 0 14px;line-height:1.6;">
-                Place a bulk order (MOQ 50 units) with your logo branded at wholesale rates.
-                Save up to 44% vs sample price!
-              </p>
-              <a href="https://thechoicecompany.in/bulk-orders"
-                 style="background:#1A5C4A;color:#fff;padding:10px 22px;
-                         border-radius:6px;text-decoration:none;font-size:14px;">
-                Get Bulk Quote →
-              </a>
-            </div>
+          <!-- Shipping address -->
+          <table width="100%" cellpadding="0" cellspacing="0"
+                 style="background:#F9F7F3;border-radius:8px;margin-bottom:24px;">
+            <tr>
+              <td style="padding:16px 20px;">
+                <p style="margin:0 0 6px;font-size:11px;color:#9ca3af;letter-spacing:1px;text-transform:uppercase;">
+                  Delivery Address
+                </p>
+                <p style="margin:0;font-size:13px;color:#374151;line-height:1.7;">
+                  <span th:text="${order.shippingAddress['line1']}"></span><br>
+                  <span th:if="${order.shippingAddress['line2'] != null and !#strings.isEmpty(order.shippingAddress['line2'])}"
+                        th:text="${order.shippingAddress['line2'] + ', '}"></span>
+                  <span th:text="${order.shippingAddress['city']}"></span>,
+                  <span th:text="${order.shippingAddress['state']}"></span> —
+                  <span th:text="${order.shippingAddress['pincode']}"></span><br>
+                  <strong>India</strong>
+                </p>
+              </td>
+            </tr>
+          </table>
 
-            <p style="color:#888;font-size:13px;text-align:center;margin:0;">
-              Questions? WhatsApp us at
-              <a href="https://wa.me/916268899194" style="color:#25D366;">+91 6268899194</a>
-            </p>
-          </td>
-        </tr>
+          <!-- Bulk order upsell -->
+          <table width="100%" cellpadding="0" cellspacing="0"
+                 style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:8px;margin-bottom:8px;">
+            <tr>
+              <td style="padding:20px 24px;">
+                <h4 style="color:#166534;margin:0 0 8px;font-size:15px;">
+                  👍 Happy with the sample quality?
+                </h4>
+                <p style="color:#166534;font-size:13px;margin:0 0 14px;line-height:1.6;">
+                  Place a bulk order from <strong>MOQ 50 units</strong> with your logo printed —
+                  delivered pan-India at wholesale rates.
+                </p>
+                <a href="https://thechoicecompany.in/bulk-orders"
+                   style="display:inline-block;background:#1A5C4A;color:#fff;padding:10px 22px;border-radius:6px;text-decoration:none;font-size:13px;font-weight:600;">
+                  Get Bulk Quote →
+                </a>
+              </td>
+            </tr>
+          </table>
 
-        <tr>
-          <td style="background:#0D1B2A;padding:18px;text-align:center;">
-            <p style="margin:0;color:#ffffff;opacity:0.35;font-size:12px;">
-              © 2026 The Choice Company · All Rights Reserved
-            </p>
-          </td>
-        </tr>
-      </table>
-    </td></tr>
-  </table>
+        </td>
+      </tr>
+
+      <!-- Footer -->
+      <tr>
+        <td style="background:#0D1B2A;padding:16px;text-align:center;">
+          <p style="color:rgba(255,255,255,0.4);margin:0;font-size:11px;">
+            © <span th:text="${#temporals.format(#temporals.createNow(), 'yyyy')}">2026</span>
+            The Choice Company &nbsp;·&nbsp; +91 62688 99194
+            &nbsp;·&nbsp;
+            <a href="https://thechoicecompany.in"
+               style="color:rgba(255,255,255,0.4);text-decoration:none;">
+              thechoicecompany.in
+            </a>
+          </p>
+        </td>
+      </tr>
+
+    </table>
+  </td></tr>
+</table>
+
 </body>
 </html>

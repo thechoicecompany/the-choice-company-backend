@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body style="font-family:Arial,sans-serif;color:#0D1B2A;">
+  <div style="max-width:520px;margin:0 auto;padding:24px;">
+    <h3>New catalogue request</h3>
+    <table style="font-size:14px;">
+      <tr><td style="color:#888;padding:4px 12px 4px 0;">Email</td><td th:text="${catalogue.email}"></td></tr>
+      <tr><td style="color:#888;padding:4px 12px 4px 0;">Company</td><td th:text="${catalogue.companyName}"></td></tr>
+      <tr><td style="color:#888;padding:4px 12px 4px 0;">Phone</td><td th:text="${catalogue.phone}"></td></tr>
+      <tr><td style="color:#888;padding:4px 12px 4px 0;">Source</td><td th:text="${catalogue.source}"></td></tr>
+      <tr><td style="color:#888;padding:4px 12px 4px 0;">Page</td><td th:text="${catalogue.pageUrl}"></td></tr>
+    </table>
+  </div>
+</body>
+</html>

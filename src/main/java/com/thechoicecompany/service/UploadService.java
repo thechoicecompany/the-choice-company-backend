@@ -406,4 +406,60 @@ public class UploadService {
         String url,
         String publicId
     ) {}
+    private static final long MAX_RAW_SIZE = 20 * 1024 * 1024; // 20 MB, adjust as needed
+
+    public Map<String, String> uploadRawFile(MultipartFile file, String folder) {
+        if (file == null || file.isEmpty())
+            throw new BusinessException("File is empty or missing");
+        if (!"application/pdf".equalsIgnoreCase(file.getContentType()))
+            throw new BusinessException("Only PDF files are allowed");
+        if (file.getSize() > MAX_RAW_SIZE)
+            throw new BusinessException("File too large (" + (file.getSize() / 1024 / 1024) + " MB). Max 20 MB");
+
+        String normalizedFolder = normalizeFolder(folder);
+        String publicId = UUID.randomUUID().toString();
+
+        try {
+            Map<?, ?> result = cloudinary.uploader().upload(
+                file.getBytes(),
+                ObjectUtils.asMap(
+                    "public_id", publicId,
+                    "folder", normalizedFolder,
+                    "resource_type", "raw",   // ← key difference from image upload
+                    "overwrite", true
+                )
+            );
+            String url = (String) result.get("secure_url");
+            String pid = (String) result.get("public_id");
+            if (url == null) throw new BusinessException("Cloudinary did not return secure URL");
+            return Map.of("url", url, "publicId", pid != null ? pid : normalizedFolder + "/" + publicId);
+        } catch (IOException e) {
+            throw new BusinessException("PDF upload to Cloudinary failed: " + e.getMessage());
+        }
+    }
+    /**
+     * Upload an image and return BOTH url and publicId — unlike uploadImage(),
+     * which only returns the URL. Needed anywhere the caller must later delete
+     * or replace the image (e.g. gallery thumbnails).
+     */
+    public Map<String, String> uploadImageWithPublicId(MultipartFile file, String folder) {
+        validateFile(file);
+        String normalizedFolder = normalizeFolder(folder);
+        UploadResult result = doUploadWithPublicId(file, normalizedFolder);
+        return Map.of("url", result.url(), "publicId", result.publicId());
+    }
+
+    /**
+     * Delete a raw file (PDF) from Cloudinary by public_id.
+     * Non-fatal — logs warning on failure, mirrors deleteImage().
+     */
+    public void deleteRawFile(String publicId) {
+        if (publicId == null || publicId.isBlank()) return;
+        try {
+            cloudinary.uploader().destroy(publicId, ObjectUtils.asMap("resource_type", "raw"));
+            log.info("Cloudinary raw file deleted: {}", publicId);
+        } catch (IOException e) {
+            log.warn("Could not delete Cloudinary raw file {}: {}", publicId, e.getMessage());
+        }
+    }
 }

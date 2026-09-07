@@ -1,32 +1,3 @@
-//package com.thechoicecompany;
-//
-//import org.springframework.boot.SpringApplication;
-//import org.springframework.boot.autoconfigure.SpringBootApplication;
-//import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
-//import org.springframework.scheduling.annotation.EnableScheduling;
-//import org.springframework.data.web.config.EnableSpringDataWebSupport;
-///**
-// * The Choice Company — Spring Boot 3.3.x Backend
-// * Java 21 | PostgreSQL 18 | JWT Auth | REST API
-// *
-// * Entry point for the application.
-// * @EnableJpaAuditing  → enables @CreatedDate and @LastModifiedDate on entities
-// * @EnableScheduling   → enables @Scheduled jobs (follow-up reminders, reports)
-// */
-//@SpringBootApplication
-//@EnableJpaAuditing
-//@EnableScheduling
-//@EnableSpringDataWebSupport(pageSerializationMode = EnableSpringDataWebSupport.PageSerializationMode.VIA_DTO)
-//
-//public class ThechoicecompanyApplication {
-//
-//    public static void main(String[] args) {
-//        SpringApplication.run(ThechoicecompanyApplication.class, args);
-//    }
-//    
-//}
-
-
 package com.thechoicecompany;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -54,7 +25,7 @@ public class ThechoicecompanyApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(ThechoicecompanyApplication.class, args);
-    }  // ← main() closes here
+    }  
 
     @Bean
     ApplicationRunner validateSecrets(
@@ -73,4 +44,4 @@ public class ThechoicecompanyApplication {
         };
     }
 
-}  // ← class closes here
+}  

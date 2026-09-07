@@ -2,10 +2,13 @@ package com.thechoicecompany.controller;
 
 import com.thechoicecompany.dto.request.CatalogueRequestDto;
 import com.thechoicecompany.dto.response.ApiResponse;
+import com.thechoicecompany.dto.response.CatalogueResponseDto;
 import com.thechoicecompany.dto.response.PagedResponse;
 import com.thechoicecompany.entity.CatalogueRequest;
 import com.thechoicecompany.exception.BusinessException;
 import com.thechoicecompany.repository.CatalogueRequestRepository;
+import com.thechoicecompany.service.EmailService;
+import org.springframework.beans.factory.annotation.Value;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,15 +32,20 @@ import java.time.LocalDateTime;
 public class CatalogueController {
 
     private final CatalogueRequestRepository catalogueRepository;
+    private final EmailService emailService;
 
-    // ── PUBLIC — called by Next.js exit-intent popup ───────────
+    // Cloudinary raw URL — same PDF for every request, no per-request upload needed
+    @Value("${app.catalogue.download-url}")
+    private String catalogueDownloadUrl;
+
+    // ── PUBLIC — exit-intent popup, static catalog page, AND the gallery
+    //             contact-gate (CatalogGateModal) all hit this ───────────────
     @PostMapping("/request")
     @Operation(summary = "Track a catalogue download request (public)")
-    public ResponseEntity<ApiResponse<Void>> requestCatalogue(
+    public ResponseEntity<ApiResponse<CatalogueResponseDto>> requestCatalogue(
             @Valid @RequestBody CatalogueRequestDto dto,
             HttpServletRequest httpRequest) {
 
-        // Rate limit — same email max once per hour
         boolean recentRequest = catalogueRepository.existsByEmailAndCreatedAtAfter(
             dto.getEmail(), LocalDateTime.now().minusHours(1));
         if (recentRequest) {
@@ -54,19 +62,21 @@ public class CatalogueController {
             .source(dto.getSource() != null ? dto.getSource() : "exit_popup")
             .pageUrl(dto.getPageUrl())
             .ipAddress(ipAddress)
-            .emailSent(false)
+            .emailSent(true)
             .build();
-
         catalogueRepository.save(request);
         log.info("Catalogue request saved: {} via {}", dto.getEmail(), dto.getSource());
 
-        // TODO: trigger async email to send the catalogue PDF
-        // emailService.sendCatalogue(request);
+        emailService.sendCatalogueAck(request, catalogueDownloadUrl);
+        emailService.sendCatalogueInternalAlert(request);
 
-        return ResponseEntity.ok(ApiResponse.success(null, "Catalogue will be emailed to you shortly"));
+        return ResponseEntity.ok(ApiResponse.success(
+            new CatalogueResponseDto(catalogueDownloadUrl),
+            "Catalogue ready"
+        ));
     }
 
-    // ── ADMIN — List all catalogue requests ───────────────────
+    // ── ADMIN — unchanged ───────────────────────────────────────────────────
     @GetMapping("/admin/requests")
     @Operation(summary = "List all catalogue requests (admin)")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN','SALES_MANAGER')")

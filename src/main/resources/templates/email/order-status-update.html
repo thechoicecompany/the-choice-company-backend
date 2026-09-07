@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background:#F9F7F3;font-family:Arial,sans-serif;">
+
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#F9F7F3;padding:32px 16px;">
+  <tr><td align="center">
+    <table width="600" cellpadding="0" cellspacing="0"
+           style="background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;max-width:600px;width:100%;">
+
+      <tr>
+        <td style="background:#0D1B2A;padding:24px;text-align:center;">
+          <h1 style="color:#C89B3C;margin:0;font-size:24px;font-family:Georgia,serif;">
+            The Choice Company
+          </h1>
+          <p style="color:rgba(255,255,255,0.6);margin:6px 0 0;font-size:12px;letter-spacing:1px;"
+             th:text="${statusLabel}">STATUS UPDATE</p>
+        </td>
+      </tr>
+
+      <tr>
+        <td style="padding:32px 28px;">
+          <h2 style="color:#0D1B2A;margin:0 0 8px;font-family:Georgia,serif;font-size:22px;"
+              th:text="${headline}">Your order status has changed</h2>
+          <p style="color:#6b7280;font-size:14px;margin:0 0 24px;">
+            Dear <strong th:text="${order.customerName}">Customer</strong>,<br>
+            <span th:text="${message}">Here's an update on your order.</span>
+          </p>
+
+          <table width="100%" cellpadding="0" cellspacing="0"
+                 style="background:#F9F7F3;border-radius:8px;border-left:4px solid #C89B3C;margin-bottom:24px;">
+            <tr>
+              <td style="padding:16px 20px;">
+                <p style="margin:0;font-size:11px;color:#9ca3af;letter-spacing:1px;text-transform:uppercase;">
+                  Order Reference
+                </p>
+                <p style="margin:6px 0 4px;font-size:22px;font-weight:bold;color:#0D1B2A;font-family:Georgia,serif;"
+                   th:text="${order.orderId}">TCC-DEMO-2026-XXXXX</p>
+                <p th:if="${trackingNumber != null}" style="margin:0;font-size:12px;color:#374151;">
+                  Tracking Number: <strong th:text="${trackingNumber}">—</strong>
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+
+      <tr>
+        <td style="background:#0D1B2A;padding:16px;text-align:center;">
+          <p style="color:rgba(255,255,255,0.4);margin:0;font-size:11px;">
+            © <span th:text="${#temporals.format(#temporals.createNow(), 'yyyy')}">2026</span>
+            The Choice Company &nbsp;·&nbsp; +91 62688 99194
+            &nbsp;·&nbsp;
+            <a href="https://thechoicecompany.in" style="color:rgba(255,255,255,0.4);text-decoration:none;">
+              thechoicecompany.in
+            </a>
+          </p>
+        </td>
+      </tr>
+
+    </table>
+  </td></tr>
+</table>
+
+</body>
+</html>
