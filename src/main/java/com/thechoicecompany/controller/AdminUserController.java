@@ -2,6 +2,7 @@ package com.thechoicecompany.controller;
 
 import com.thechoicecompany.dto.request.CreateUserRequest;
 import com.thechoicecompany.dto.response.ApiResponse;
+import com.thechoicecompany.dto.response.UserResponse;
 import com.thechoicecompany.entity.User;
 import com.thechoicecompany.exception.ResourceNotFoundException;
 import com.thechoicecompany.repository.UserRepository;
@@ -14,31 +15,29 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
- 
+
 import java.util.List;
- 
 
 @RestController
 @RequestMapping("/api/admin/users")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('SUPER_ADMIN')")   // class-level — all methods require SUPER_ADMIN
 public class AdminUserController {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    // ── List all users (SUPER_ADMIN only) ────────────────────────────────────
     @GetMapping
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ResponseEntity<ApiResponse<List<User>>> listUsers() {
-        List<User> users = userRepository.findAll();
-        users.forEach(u -> u.setPassword(null)); // never expose hashes
+    public ResponseEntity<ApiResponse<List<UserResponse>>> listUsers() {
+        List<UserResponse> users = userRepository.findAll()
+                .stream()
+                .map(this::toResponse)
+                .toList();
         return ResponseEntity.ok(ApiResponse.success(users, "Users fetched"));
     }
 
-    // ── Create user (SUPER_ADMIN only) ───────────────────────────────────────
     @PostMapping
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ResponseEntity<ApiResponse<User>> createUser(
+    public ResponseEntity<ApiResponse<UserResponse>> createUser(
             @Valid @RequestBody CreateUserRequest request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -54,22 +53,13 @@ public class AdminUserController {
                 .isActive(true)
                 .build();
 
-        User savedUser = userRepository.save(user);
-        savedUser.setPassword(null);
-
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(savedUser, "User created successfully"));
+                .body(ApiResponse.success(toResponse(userRepository.save(user)), "User created successfully"));
     }
 
-
-    // ── Toggle active/inactive (SUPER_ADMIN only) ────────────────────────────
     @PatchMapping("/{id}/toggle-active")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ResponseEntity<ApiResponse<User>> toggleActive(@PathVariable Long id) {
- 
-        // Guard: don't let an admin deactivate their own account —
-        // this is what silently kills the current session and produces
-        // the 403 cascade on every request right after.
+    public ResponseEntity<ApiResponse<UserResponse>> toggleActive(@PathVariable Long id) {
+
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getName() != null) {
             User currentUser = userRepository.findByEmail(auth.getName())
@@ -79,19 +69,15 @@ public class AdminUserController {
                 throw new IllegalStateException("You cannot deactivate your own account.");
             }
         }
- 
+
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
- 
+
         user.setIsActive(!user.getIsActive());
-        userRepository.save(user);
-        user.setPassword(null);
- 
-        return ResponseEntity.ok(ApiResponse.success(user, "User status updated"));
+        return ResponseEntity.ok(ApiResponse.success(toResponse(userRepository.save(user)), "User status updated"));
     }
-    // ── Delete user (SUPER_ADMIN only) ───────────────────────────────────────
+
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long id) {
         if (!userRepository.existsById(id)) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -99,5 +85,19 @@ public class AdminUserController {
         }
         userRepository.deleteById(id);
         return ResponseEntity.ok(ApiResponse.success(null, "User deleted"));
+    }
+
+    // ── Mapper — password never touches this method ───────────────────────────
+    private UserResponse toResponse(User u) {
+        return UserResponse.builder()
+                .id(u.getId())
+                .email(u.getEmail())
+                .fullName(u.getFullName())
+                .role(u.getRole())
+                .isActive(u.getIsActive())
+                .lastLogin(u.getLastLogin())
+                .createdAt(u.getCreatedAt())
+                .updatedAt(u.getUpdatedAt())
+                .build();
     }
 }

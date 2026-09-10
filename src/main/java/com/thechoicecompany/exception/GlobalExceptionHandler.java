@@ -81,4 +81,12 @@ public class GlobalExceptionHandler {
 	    return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
 	            .body(ApiResponse.error("File too large. Maximum allowed size is 50 MB."));
 	}
+	// Add this method alongside the existing @ExceptionHandler methods
+
+	// ── Bad request (invalid input, tampered cart, etc.) ──────────────────
+	@ExceptionHandler(BadRequestException.class)
+	public ResponseEntity<ApiResponse<Void>> handleBadRequest(BadRequestException ex) {
+	    return ResponseEntity.badRequest().body(ApiResponse.error(ex.getMessage()));
+	}
+	
 }

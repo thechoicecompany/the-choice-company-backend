@@ -27,7 +27,6 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Query("SELECT p FROM Product p WHERE p.isFeatured = true AND p.isActive = true ORDER BY p.sortOrder ASC")
     List<Product> findFeatured(Pageable pageable);
 
-    // ── No @EntityGraph here — native queries cannot use EntityGraphs ─────
     @Query(value = """
         SELECT * FROM public.products p
         WHERE p.is_active = true

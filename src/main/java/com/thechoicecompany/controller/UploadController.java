@@ -34,11 +34,31 @@ public class UploadController {
 
         String url      = uploadService.uploadImage(file, folder);
         String publicId = url.replaceAll(".*/upload/(v\\d+/)?", "")
-                            .replaceAll("\\.[a-zA-Z]+$", "");
+                             .replaceAll("\\.[a-zA-Z]+$", "");
         return ResponseEntity.ok(ApiResponse.success(
-            Map.of("url", url, "publicId", publicId),
-            "Image uploaded"
+                Map.of("url", url, "publicId", publicId),
+                "Image uploaded"
         ));
+    }
+
+    /**
+     * Single image upload — returns BOTH url AND publicId from Cloudinary directly.
+     *
+     * Used by: Hero Banner admin (needs publicId to delete/replace the image later).
+     *
+     * Difference from /image: this calls uploadImageWithPublicId() which gets the
+     * real publicId from Cloudinary's response instead of reverse-engineering it
+     * from the URL.
+     */
+    @PostMapping(value = "/image-with-id", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Upload single image, returns url + publicId from Cloudinary")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','CONTENT_MANAGER')")
+    public ResponseEntity<ApiResponse<Map<String, String>>> uploadImageWithId(
+            @RequestPart("file") MultipartFile file,
+            @RequestParam(defaultValue = "tcc/products") String folder) {
+
+        Map<String, String> result = uploadService.uploadImageWithPublicId(file, folder);
+        return ResponseEntity.ok(ApiResponse.success(result, "Image uploaded"));
     }
 
     /**
@@ -57,16 +77,17 @@ public class UploadController {
 
         if (files == null || files.isEmpty()) {
             return ResponseEntity.badRequest().body(
-                ApiResponse.<List<Map<String, String>>>success(null, "No files provided"));
+                    ApiResponse.<List<Map<String, String>>>success(null, "No files provided"));
         }
         if (files.size() > 8) {
             return ResponseEntity.badRequest().body(
-                ApiResponse.<List<Map<String, String>>>success(null, "Maximum 8 images per product"));
+                    ApiResponse.<List<Map<String, String>>>success(null, "Maximum 8 images per product"));
         }
 
         List<Map<String, String>> results = uploadService.uploadImages(files, folder);
-        return ResponseEntity.ok(ApiResponse.success(results,
-            files.size() + " image(s) uploaded successfully"));
+        return ResponseEntity.ok(ApiResponse.success(
+                results, files.size() + " image(s) uploaded successfully"
+        ));
     }
 
     /** Gallery image upload */

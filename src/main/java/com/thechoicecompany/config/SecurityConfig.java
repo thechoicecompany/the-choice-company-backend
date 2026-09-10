@@ -96,6 +96,16 @@ public class SecurityConfig {
                     "/api/demo-orders"
                 ).permitAll()
 
+                // Called anonymously from the Next.js checkout flow before
+                // Razorpay order creation (guest checkout — no login) to
+                // recompute cart pricing server-side. Must stay public or
+                // every checkout attempt 403s before it reaches the
+                // controller.
+                .requestMatchers(
+                    HttpMethod.POST,
+                    "/api/cart/compute-price"
+                ).permitAll()
+
                 .requestMatchers(
                         HttpMethod.POST,
                         "/api/newsletter/**"
@@ -128,7 +138,11 @@ public class SecurityConfig {
                     "/api-docs/**",
                     "/actuator/health"
                 ).permitAll()
-
+                
+                .requestMatchers(
+                	    HttpMethod.GET,
+                	    "/api/hero-banners"
+                	).permitAll()
 
                 // =========================================================
                 // EVERYTHING ELSE

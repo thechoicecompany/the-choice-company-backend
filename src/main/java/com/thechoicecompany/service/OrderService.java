@@ -49,10 +49,12 @@ public class OrderService {
             .total(request.getTotal())
             .build();
 
+//        // Send order confirmation email asynchronously
         DemoOrder saved = orderRepository.save(order);
 
-        // Send order confirmation email asynchronously
-        emailService.sendOrderConfirmation(saved);
+        // Send confirmation and flip the flag in a separate async transaction
+        // so a mail failure never rolls back the saved order.
+        emailService.sendOrderConfirmationAndFlag(saved.getId());
 
         log.info("Demo order saved: {} (payment: {})", orderId, request.getRazorpayPaymentId());
         return saved;

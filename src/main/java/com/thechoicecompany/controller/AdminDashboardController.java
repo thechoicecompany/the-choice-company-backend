@@ -24,7 +24,7 @@ public class AdminDashboardController {
 
     @GetMapping("/stats")
     @Operation(summary = "Full dashboard statistics — inquiries + catalogue + inventory + orders")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','SALES_MANAGER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','SALES_MANAGER','PRODUCT_MANAGER')")
     public ResponseEntity<ApiResponse<DashboardStatsResponse>> getStats() {
         return ResponseEntity.ok(ApiResponse.success(dashboardService.getFullStats()));
     }

@@ -41,7 +41,7 @@ public class InquiryController {
     // ── ADMIN — JWT Required ───────────────────────────────────────────────
     @GetMapping
     @Operation(summary = "List all inquiries with filters", security = @SecurityRequirement(name = "bearerAuth"))
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','SALES_MANAGER','SALES_EXECUTIVE')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','SALES_MANAGER','PRODUCT_MANAGER')")
     public ResponseEntity<ApiResponse<PagedResponse<InquiryResponse>>> list(
             @RequestParam(required = false) InquiryStatus status,
             @RequestParam(required = false) String state,
@@ -56,14 +56,14 @@ public class InquiryController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get inquiry by ID", security = @SecurityRequirement(name = "bearerAuth"))
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','SALES_MANAGER','SALES_EXECUTIVE')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','SALES_MANAGER','PRODUCT_MANAGER')")
     public ResponseEntity<ApiResponse<InquiryResponse>> getById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(inquiryService.getInquiry(id)));
     }
 
     @PatchMapping("/{id}/status")
     @Operation(summary = "Update inquiry status", security = @SecurityRequirement(name = "bearerAuth"))
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','SALES_MANAGER','SALES_EXECUTIVE')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','SALES_MANAGER','PRODUCT_MANAGER')")
     public ResponseEntity<ApiResponse<InquiryResponse>> updateStatus(
             @PathVariable Long id,
             @Valid @RequestBody UpdateInquiryStatusRequest request) {
@@ -74,7 +74,7 @@ public class InquiryController {
 
     @PostMapping("/{id}/notes")
     @Operation(summary = "Add follow-up note to inquiry", security = @SecurityRequirement(name = "bearerAuth"))
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','SALES_MANAGER','SALES_EXECUTIVE')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','SALES_MANAGER','PRODUCT_MANAGER')")
     public ResponseEntity<ApiResponse<InquiryResponse>> addNote(
             @PathVariable Long id,
             @Valid @RequestBody AddNoteRequest request) {
@@ -85,7 +85,7 @@ public class InquiryController {
 
     @GetMapping("/dashboard/stats")
     @Operation(summary = "Get dashboard statistics", security = @SecurityRequirement(name = "bearerAuth"))
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','SALES_MANAGER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','SALES_MANAGER','PRODUCT_MANAGER')")
     public ResponseEntity<ApiResponse<Map<String, Object>>> dashboardStats() {
         return ResponseEntity.ok(ApiResponse.success(inquiryService.getDashboardStats()));
     }

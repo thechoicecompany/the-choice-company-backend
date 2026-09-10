@@ -26,18 +26,27 @@ public class ThechoicecompanyApplication {
     public static void main(String[] args) {
         SpringApplication.run(ThechoicecompanyApplication.class, args);
     }  
-
     @Bean
     ApplicationRunner validateSecrets(
             @Value("${jwt.secret}") String jwtSecret,
             @Value("${spring.profiles.active:dev}") String activeProfile
     ) {
         return args -> {
-            if ("prod".equals(activeProfile)) {
-                if (jwtSecret.isBlank() || jwtSecret.length() < 32) {
+            // Always validate — staging/UAT environments that aren't tagged "prod"
+            // must still have a real secret, not a placeholder.
+            if ("dev".equals(activeProfile) || "test".equals(activeProfile)) {
+                // Allow weak secrets in local dev/test only
+                if (jwtSecret.isBlank()) {
                     throw new IllegalStateException(
-                        "[TCC] JWT_SECRET is missing or too short. " +
-                        "Set a strong secret (min 32 chars) in your prod environment."
+                        "[TCC] JWT_SECRET is not set. Add it to application-" + activeProfile + ".properties."
+                    );
+                }
+            } else {
+                // Staging, prod, or any other profile: enforce minimum strength
+                if (jwtSecret.isBlank() || jwtSecret.length() < 64) {
+                    throw new IllegalStateException(
+                        "[TCC] JWT_SECRET is missing or too short for profile '" + activeProfile + "'. " +
+                        "Minimum 64 characters required. Generate with: openssl rand -base64 64"
                     );
                 }
             }

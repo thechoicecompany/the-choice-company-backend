@@ -18,6 +18,13 @@ public interface InventoryRepository extends JpaRepository<ProductInventory, Lon
 
     boolean existsByProductId(Long productId);
 
+    /**
+     * Batch-fetches inventory records for a list of product IDs in one query.
+     * Used by ProductService listing methods to avoid N+1.
+     */
+    @Query("SELECT i FROM ProductInventory i WHERE i.product.id IN :productIds")
+    List<ProductInventory> findAllByProductIdIn(@Param("productIds") List<Long> productIds);
+
     @Query("SELECT i FROM ProductInventory i WHERE (i.stockQty - i.reservedQty) <= i.reorderLevel")
     List<ProductInventory> findLowStockItems();
 

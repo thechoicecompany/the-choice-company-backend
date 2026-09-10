@@ -35,7 +35,7 @@ public class AdminProductController {
 
     @GetMapping
     @Operation(summary = "List all products with inventory info (admin)")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','CONTENT_MANAGER','SALES_MANAGER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','SALES_MANAGER','CONTENT_MANAGER','PRODUCT_MANAGER')")
     public ResponseEntity<ApiResponse<PagedResponse<ProductAdminResponse>>> listAll(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
@@ -46,14 +46,14 @@ public class AdminProductController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get single product with inventory (admin)")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','CONTENT_MANAGER','SALES_MANAGER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','SALES_MANAGER','CONTENT_MANAGER','PRODUCT_MANAGER')")
     public ResponseEntity<ApiResponse<ProductAdminResponse>> getOne(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(productService.getProductAdmin(id)));
     }
 
     @PostMapping
     @Operation(summary = "Create new product — auto-creates inventory record")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','CONTENT_MANAGER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','SALES_MANAGER','CONTENT_MANAGER','PRODUCT_MANAGER')")
     public ResponseEntity<ApiResponse<ProductAdminResponse>> create(
             @Valid @RequestBody CreateProductRequest request) {
         ProductAdminResponse response = productService.createProduct(request);
@@ -63,7 +63,7 @@ public class AdminProductController {
 
     @PatchMapping("/{id}")
     @Operation(summary = "Update product details (PATCH — only provided fields updated)")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','CONTENT_MANAGER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','SALES_MANAGER','CONTENT_MANAGER','PRODUCT_MANAGER')")
     public ResponseEntity<ApiResponse<ProductAdminResponse>> update(
             @PathVariable Long id,
             @Valid @RequestBody UpdateProductRequest request) {
@@ -74,7 +74,7 @@ public class AdminProductController {
 
     @PutMapping("/{id}/pricing")
     @Operation(summary = "Replace product base price + all pricing tiers")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','CONTENT_MANAGER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','SALES_MANAGER','CONTENT_MANAGER','PRODUCT_MANAGER')")
     public ResponseEntity<ApiResponse<ProductAdminResponse>> updatePricing(
             @PathVariable Long id,
             @Valid @RequestBody UpdatePricingRequest request) {
@@ -85,7 +85,7 @@ public class AdminProductController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Soft delete product (sets isActive=false — keeps data)")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','CONTENT_MANAGER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','SALES_MANAGER','CONTENT_MANAGER','PRODUCT_MANAGER')")
     public ResponseEntity<ApiResponse<Void>> softDelete(@PathVariable Long id) {
         productService.deleteProduct(id);
         return ResponseEntity.ok(ApiResponse.success(null, "Product deactivated"));

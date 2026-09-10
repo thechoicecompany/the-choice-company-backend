@@ -30,4 +30,5 @@ public interface SampleProductRepository extends JpaRepository<SampleProduct, Lo
 
     @Query("SELECT DISTINCT p.category FROM SampleProduct p WHERE p.isActive = true ORDER BY p.category")
     List<String> findDistinctActiveCategories();
+    List<SampleProduct> findAllByIdInAndIsActiveTrue(List<Long> ids);
 }

@@ -21,12 +21,6 @@ public class GalleryController {
 
     private final GalleryService galleryService;
 
-//    @GetMapping
-//    @Operation(summary = "Get gallery items — optionally filter by category")
-//    public ResponseEntity<ApiResponse<List<GalleryItem>>> list(
-//            @RequestParam(required = false) String category) {
-//        return ResponseEntity.ok(ApiResponse.success(galleryService.getItems(category)));
-//    }
     
     @GetMapping
     @Operation(summary = "List gallery items — lightweight thumbnails only")

@@ -9,6 +9,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
@@ -17,13 +18,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 
-/**
- * Applies per-endpoint rate limits to all public (unauthenticated) POST/GET
- * routes before Spring Security's JWT filter runs. See SecurityConfig for
- * filter ordering.
- */
 @Component
 @RequiredArgsConstructor
 public class RateLimitFilter extends OncePerRequestFilter {
@@ -32,30 +29,28 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
+    // Comma-separated trusted proxy CIDRs/IPs injected from config.
+    // Example: app.trusted-proxies=127.0.0.1,10.0.0.0/8,172.16.0.0/12
+    // Set to the IP(s) of your Nginx/load-balancer only.
+    @Value("${app.trusted-proxies:127.0.0.1}")
+    private List<String> trustedProxies;
+
     private record Rule(
             String name,
             HttpMethod method,
             String pattern,
             Bandwidth bandwidth,
-            Function<HttpServletRequest, String> extraKeyFn // null = IP-only key
+            Function<HttpServletRequest, String> extraKeyFn
     ) {}
 
     private final List<Rule> rules = List.of(
-            new Rule("login",       HttpMethod.POST, "/api/auth/login",        RateLimiterService.strict(),   null),
-            new Rule("inquiries",   HttpMethod.POST, "/api/inquiries",         RateLimiterService.moderate(), null),
-            new Rule("contact",     HttpMethod.POST, "/api/contact",           RateLimiterService.moderate(), null),
-
-            // CHANGED: was moderate() (10/min) — raised to veryLenient() (60/min).
-            // This endpoint only fires post-payment; a false-positive block here
-            // means a paying customer's order looks "unreconciled" for no reason.
-            // Kept as a DoS backstop, not a real abuse control.
+            new Rule("login",       HttpMethod.POST, "/api/auth/login",        RateLimiterService.strict(),      null),
+            new Rule("inquiries",   HttpMethod.POST, "/api/inquiries",         RateLimiterService.moderate(),    null),
+            new Rule("contact",     HttpMethod.POST, "/api/contact",           RateLimiterService.moderate(),    null),
             new Rule("demo-orders", HttpMethod.POST, "/api/demo-orders",       RateLimiterService.veryLenient(), null),
-
-            new Rule("newsletter",  HttpMethod.POST, "/api/newsletter/**",     RateLimiterService.lenient(),  null),
-            new Rule("catalogue",   HttpMethod.POST, "/api/catalogue/request", RateLimiterService.moderate(), null),
+            new Rule("newsletter",  HttpMethod.POST, "/api/newsletter/**",     RateLimiterService.lenient(),     null),
+            new Rule("catalogue",   HttpMethod.POST, "/api/catalogue/request", RateLimiterService.moderate(),    null),
             new Rule("setup-first-admin", HttpMethod.POST, "/api/setup/first-admin", RateLimiterService.strict(), null),
-
-            // Order tracking — two layers of protection, both must pass:
             new Rule("order-track-by-order", HttpMethod.GET, "/api/orders/track",
                     RateLimiterService.strict(),
                     req -> req.getParameter("orderId")),
@@ -108,11 +103,36 @@ public class RateLimitFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
+    /**
+     * Returns the real client IP, trusting X-Forwarded-For ONLY when the
+     * direct TCP peer (getRemoteAddr) is a known trusted proxy.
+     *
+     * Without this check, any client can spoof X-Forwarded-For and bypass
+     * per-IP rate limits entirely.
+     */
     private String resolveClientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
+        String remoteAddr = request.getRemoteAddr();
+
+        if (isTrustedProxy(remoteAddr)) {
+            // We're behind a proxy we trust — use the first IP in X-Forwarded-For
+            String forwarded = request.getHeader("X-Forwarded-For");
+            if (forwarded != null && !forwarded.isBlank()) {
+                // X-Forwarded-For can be a comma-separated chain: "client, proxy1, proxy2"
+                // Take the first (leftmost) value — that's the original client
+                return forwarded.split(",")[0].trim();
+            }
         }
-        return request.getRemoteAddr();
+
+        // Direct connection or untrusted proxy: use the real TCP peer address
+        return remoteAddr;
+    }
+
+    private boolean isTrustedProxy(String remoteAddr) {
+        if (remoteAddr == null) return false;
+        return trustedProxies.stream().anyMatch(trusted -> {
+            // Simple exact-match for IPs. For CIDR support, add a library
+            // like Apache Commons Net or Spring Security's IpAddressMatcher.
+            return trusted.trim().equals(remoteAddr);
+        });
     }
 }

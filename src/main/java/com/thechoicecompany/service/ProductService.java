@@ -11,7 +11,6 @@ import com.thechoicecompany.entity.Product;
 import com.thechoicecompany.entity.ProductImage;
 import com.thechoicecompany.entity.ProductInventory;
 import com.thechoicecompany.entity.ProductPricingTier;
-import com.thechoicecompany.exception.BusinessException;
 import com.thechoicecompany.exception.DuplicateResourceException;
 import com.thechoicecompany.exception.ResourceNotFoundException;
 import com.thechoicecompany.repository.InventoryRepository;
@@ -26,8 +25,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.math.BigDecimal;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,14 +34,15 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ProductService {
 
+    private final UploadService          uploadService;
     private final ProductRepository      productRepository;
     private final InventoryRepository    inventoryRepository;
     private final InventoryService       inventoryService;
-    private final ProductImageService    productImageService;    // ← NEW injection
-    private final ProductImageRepository productImageRepository; // ← NEW injection
+    private final ProductImageService    productImageService;
+    private final ProductImageRepository productImageRepository;
 
     // ═══════════════════════════════════════════════════════════
-    // PUBLIC API METHODS (unchanged — omitted for brevity)
+    // PUBLIC API
     // ═══════════════════════════════════════════════════════════
 
     @Transactional(readOnly = true)
@@ -51,55 +51,81 @@ public class ProductService {
             String occasion, String budget, Integer moq,
             int page, int size, String sort) {
 
-    	Sort sorting = switch (sort != null ? sort : "popular") {
-        case "price-asc"  -> Sort.by("base_price").ascending();
-        case "price-desc" -> Sort.by("base_price").descending();
-        case "newest"     -> Sort.by("created_at").descending();
-        default           -> Sort.by("sort_order").ascending().and(Sort.by("is_featured").descending());
-    };
-        java.math.BigDecimal minPrice = null, maxPrice = null;
+        Sort sorting = switch (sort != null ? sort : "popular") {
+            case "price-asc"  -> Sort.by("base_price").ascending();
+            case "price-desc" -> Sort.by("base_price").descending();
+            case "newest"     -> Sort.by("created_at").descending();
+            default           -> Sort.by("sort_order").ascending()
+                                     .and(Sort.by("is_featured").descending());
+        };
+
+        BigDecimal minPrice = null, maxPrice = null;
         if (budget != null && !budget.isBlank()) {
             if (budget.endsWith("+")) {
-                minPrice = new java.math.BigDecimal(budget.replace("+", ""));
+                minPrice = new BigDecimal(budget.replace("+", ""));
             } else {
                 String[] parts = budget.split("-");
                 if (parts.length == 2) {
-                    minPrice = new java.math.BigDecimal(parts[0]);
-                    maxPrice = new java.math.BigDecimal(parts[1]);
+                    minPrice = new BigDecimal(parts[0]);
+                    maxPrice = new BigDecimal(parts[1]);
                 }
             }
         }
 
         Page<Product> products = productRepository.findWithFilters(
-            category, featured, occasion, minPrice, maxPrice, moq,
-            PageRequest.of(page, size, sorting));
+                category, featured, occasion, minPrice, maxPrice, moq,
+                PageRequest.of(page, size, sorting));
 
-        // ── Force-initialize pricingTiers for each product ────────────────────
-        // Required because the native query can't use @EntityGraph.
-        // Hibernate will batch these if spring.jpa.properties.hibernate.default_batch_fetch_size is set.
+        // Force-initialize pricingTiers (native query can't use @EntityGraph).
+        // With hibernate.default_batch_fetch_size=20 this becomes 1 batched query,
+        // not N queries. Confirm that property is set in application.properties.
         products.forEach(p -> p.getPricingTiers().size());
 
-        return PagedResponse.from(products.map(p -> toPublicResponse(p, true)));
+        // ── Batch-load inventory for the whole page in one query ──────────────
+        List<Long> ids = products.map(Product::getId).getContent();
+        Map<Long, ProductInventory> inventoryByProductId = inventoryRepository
+                .findAllByProductIdIn(ids)
+                .stream()
+                .collect(Collectors.toMap(i -> i.getProduct().getId(), i -> i));
+
+        return PagedResponse.from(
+                products.map(p -> toPublicResponse(p, inventoryByProductId.get(p.getId())))
+        );
     }
 
     @Transactional(readOnly = true)
     public ProductResponse getProductBySlug(String slug) {
         Product product = productRepository.findBySlugAndIsActiveTrue(slug)
-            .orElseThrow(() -> new ResourceNotFoundException("Product", "slug", slug));
-        return toPublicResponse(product, true);
+                .orElseThrow(() -> new ResourceNotFoundException("Product", "slug", slug));
+        // Single product — single inventory query is fine here
+        ProductInventory inv = inventoryRepository.findByProductId(product.getId()).orElse(null);
+        return toPublicResponse(product, inv);
     }
 
     @Transactional(readOnly = true)
-    public List<String> getAllSlugs() { return productRepository.findAllActiveSlugs(); }
+    public List<String> getAllSlugs() {
+        return productRepository.findAllActiveSlugs();
+    }
 
     @Transactional(readOnly = true)
     public List<ProductResponse> getFeaturedProducts(int limit) {
-        return productRepository.findFeatured(PageRequest.of(0, limit))
-            .stream().map(p -> toPublicResponse(p, false)).collect(Collectors.toList());
+        List<Product> featured = productRepository.findFeatured(PageRequest.of(0, limit));
+
+        List<Long> ids = featured.stream().map(Product::getId).toList();
+        Map<Long, ProductInventory> inventoryMap = inventoryRepository
+                .findAllByProductIdIn(ids)
+                .stream()
+                .collect(Collectors.toMap(i -> i.getProduct().getId(), i -> i));
+
+        return featured.stream()
+                .map(p -> toPublicResponse(p, inventoryMap.get(p.getId())))
+                .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<String> getCategories() { return productRepository.findDistinctCategories(); }
+    public List<String> getCategories() {
+        return productRepository.findDistinctCategories();
+    }
 
     // ═══════════════════════════════════════════════════════════
     // ADMIN METHODS
@@ -108,113 +134,128 @@ public class ProductService {
     @Transactional(readOnly = true)
     public PagedResponse<ProductAdminResponse> listProductsAdmin(int page, int size) {
         Page<Product> products = productRepository.findAll(
-            PageRequest.of(page, size, Sort.by("createdAt").descending()));
-        return PagedResponse.from(products.map(this::toAdminResponse));
+                PageRequest.of(page, size, Sort.by("createdAt").descending()));
+
+        // ── Two batch queries replace N*2 queries ─────────────────────────────
+        List<Long> ids = products.map(Product::getId).getContent();
+
+        Map<Long, ProductInventory> inventoryMap = inventoryRepository
+                .findAllByProductIdIn(ids)
+                .stream()
+                .collect(Collectors.toMap(i -> i.getProduct().getId(), i -> i));
+
+        // Images grouped by productId, preserving sort_order (query orders by it)
+        Map<Long, List<ProductImage>> imagesMap = productImageRepository
+                .findAllByProductIdIn(ids)
+                .stream()
+                .collect(Collectors.groupingBy(img -> img.getProduct().getId()));
+
+        return PagedResponse.from(
+                products.map(p -> toAdminResponse(
+                        p,
+                        inventoryMap.get(p.getId()),
+                        imagesMap.getOrDefault(p.getId(), List.of())
+                ))
+        );
     }
 
     @Transactional(readOnly = true)
     public ProductAdminResponse getProductAdmin(Long id) {
         Product product = productRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
-        return toAdminResponse(product);
+                .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
+        // Single product — individual queries are fine
+        ProductInventory inv = inventoryRepository.findByProductId(id).orElse(null);
+        List<ProductImage> images = productImageRepository.findByProductIdOrderBySortOrderAsc(id);
+        return toAdminResponse(product, inv, images);
     }
 
-    // ── Create new product ─────────────────────────────────────
+    // ── Create ────────────────────────────────────────────────
     @Transactional
     public ProductAdminResponse createProduct(CreateProductRequest req) {
 
         String slug = req.getSlug() != null && !req.getSlug().isBlank()
-            ? SlugUtils.toSlug(req.getSlug())
-            : SlugUtils.toSlug(req.getName());
+                ? SlugUtils.toSlug(req.getSlug())
+                : SlugUtils.toSlug(req.getName());
 
         if (productRepository.existsBySlug(slug))
             throw new DuplicateResourceException("Product with slug '" + slug + "' already exists");
 
-        // ── Derive primary image URL ──────────────────────────────────────────
-        // If productImages supplied, use the first one's URL as the legacy image field.
-        // This keeps backward compat with the products.image column.
         String primaryImageUrl = req.getImage();
-        if (req.getProductImages() != null && !req.getProductImages().isEmpty()) {
-            req.getProductImages().stream()
-                .filter(pi -> pi.getSortOrder() == 0)
-                .findFirst()
-                .ifPresent(pi -> { /* will be set below */ });
-            primaryImageUrl = req.getProductImages().get(0).getUrl();
-        }
-
-        // ── Extra image URLs for the legacy List<String> column ───────────────
         List<String> extraUrls = new ArrayList<>();
-        if (req.getProductImages() != null && req.getProductImages().size() > 1) {
+
+        if (req.getProductImages() != null && !req.getProductImages().isEmpty()) {
+            primaryImageUrl = req.getProductImages().get(0).getUrl();
             req.getProductImages().stream()
-                .skip(1)
-                .map(pi -> pi.getUrl())
-                .forEach(extraUrls::add);
+                    .skip(1)
+                    .map(CreateProductRequest.ProductImageInput::getUrl)
+                    .forEach(extraUrls::add);
         } else if (req.getImages() != null) {
             extraUrls.addAll(req.getImages());
         }
 
         Product product = Product.builder()
-            .name(req.getName())
-            .slug(slug)
-            .category(req.getCategory())
-            .categorySlug(req.getCategorySlug())
-            .description(req.getDescription())
-            .fullDescription(req.getFullDescription())
-            .image(primaryImageUrl)                         // ← derived above
-            .images(extraUrls)                              // ← derived above
-            .moq(req.getMoq())
-            .basePrice(req.getBasePrice())
-            .material(req.getMaterial())
-            .leadTime(req.getLeadTime())
-            .brandingOptions(req.getBrandingOptions() != null ? req.getBrandingOptions() : new ArrayList<>())
-            .isFeatured(req.getIsFeatured() != null ? req.getIsFeatured() : false)
-            .isActive(true)
-            .tags(req.getTags() != null ? req.getTags() : new ArrayList<>())
-            .metaTitle(req.getMetaTitle())
-            .metaDescription(req.getMetaDescription())
-            .build();
+                .name(req.getName())
+                .slug(slug)
+                .category(req.getCategory())
+                .categorySlug(req.getCategorySlug())
+                .description(req.getDescription())
+                .fullDescription(req.getFullDescription())
+                .image(primaryImageUrl)
+                .images(extraUrls)
+                .moq(req.getMoq())
+                .basePrice(req.getBasePrice())
+                .material(req.getMaterial())
+                .leadTime(req.getLeadTime())
+                .brandingOptions(req.getBrandingOptions() != null ? req.getBrandingOptions() : new ArrayList<>())
+                .isFeatured(req.getIsFeatured() != null ? req.getIsFeatured() : false)
+                .isActive(true)
+                .tags(req.getTags() != null ? req.getTags() : new ArrayList<>())
+                .metaTitle(req.getMetaTitle())
+                .metaDescription(req.getMetaDescription())
+                .build();
 
         if (req.getPricingTiers() != null) {
             List<ProductPricingTier> tiers = req.getPricingTiers().stream()
-                .map(t -> ProductPricingTier.builder()
-                    .product(product).minQty(t.getMinQty())
-                    .maxQty(t.getMaxQty()).price(t.getPrice())
-                    .label(t.getLabel()).build())
-                .collect(Collectors.toList());
+                    .map(t -> ProductPricingTier.builder()
+                            .product(product)
+                            .minQty(t.getMinQty())
+                            .maxQty(t.getMaxQty())
+                            .price(t.getPrice())
+                            .label(t.getLabel())
+                            .build())
+                    .toList();
             product.setPricingTiers(tiers);
         }
 
         Product saved = productRepository.save(product);
 
-        // ── Save ProductImage records ──────────────────────────────────────────
-        // Only when the frontend has pre-uploaded images (the primary flow).
+        List<ProductImage> savedImages = List.of();
         if (req.getProductImages() != null && !req.getProductImages().isEmpty()) {
-            productImageService.buildAndSaveImagesFromPayload(req.getProductImages(), saved);
+            savedImages = productImageService.buildAndSaveImagesFromPayload(req.getProductImages(), saved);
         }
 
-        // ── Auto-create inventory ─────────────────────────────────────────────
-     // ── Auto-create inventory ─────────────────────────────────────────────
         CreateProductRequest.InventoryInput inv = req.getInventory();
-
-        Integer stockQty       = (inv != null && inv.getStockQty()     != null) ? inv.getStockQty()     : 0;
-        Integer reorderLevel   = (inv != null && inv.getReorderLevel() != null) ? inv.getReorderLevel() : 50;
-        Integer maxStockQty    = (inv != null && inv.getMaxStockQty()  != null) ? inv.getMaxStockQty()  : 10000;
-        String  sku            = (inv != null) ? inv.getSku()            : null;
-        String  warehouseNotes = (inv != null) ? inv.getWarehouseNotes() : null;
-
         inventoryService.createInventoryForProduct(
-            saved, stockQty, reorderLevel, maxStockQty, sku, warehouseNotes
+                saved,
+                inv != null && inv.getStockQty()     != null ? inv.getStockQty()     : 0,
+                inv != null && inv.getReorderLevel() != null ? inv.getReorderLevel() : 50,
+                inv != null && inv.getMaxStockQty()  != null ? inv.getMaxStockQty()  : 10000,
+                inv != null ? inv.getSku()            : null,
+                inv != null ? inv.getWarehouseNotes() : null
         );
 
+        // Fetch the just-created inventory record to include it in the response
+        ProductInventory createdInv = inventoryRepository.findByProductId(saved.getId()).orElse(null);
+
         log.info("Product created: {} ({})", saved.getName(), saved.getSlug());
-        return toAdminResponse(saved);
+        return toAdminResponse(saved, createdInv, savedImages);
     }
 
-    // ── Update existing product (unchanged) ───────────────────
+    // ── Update ────────────────────────────────────────────────
     @Transactional
     public ProductAdminResponse updateProduct(Long id, UpdateProductRequest req) {
         Product product = productRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
+                .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
 
         if (req.getName()            != null) product.setName(req.getName());
         if (req.getCategory()        != null) product.setCategory(req.getCategory());
@@ -237,46 +278,69 @@ public class ProductService {
 
         Product saved = productRepository.save(product);
         log.info("Product updated: {}", saved.getSlug());
-        return toAdminResponse(saved);
+
+        ProductInventory inv = inventoryRepository.findByProductId(saved.getId()).orElse(null);
+        List<ProductImage> images = productImageRepository.findByProductIdOrderBySortOrderAsc(saved.getId());
+        return toAdminResponse(saved, inv, images);
     }
 
-    // ── Update pricing (unchanged) ────────────────────────────
+    // ── Update pricing ────────────────────────────────────────
     @Transactional
     public ProductAdminResponse updatePricing(Long id, UpdatePricingRequest req) {
         Product product = productRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
+                .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
 
         product.setBasePrice(req.getBasePrice());
         product.getPricingTiers().clear();
         List<ProductPricingTier> newTiers = req.getPricingTiers().stream()
-            .map(t -> ProductPricingTier.builder()
-                .product(product).minQty(t.getMinQty())
-                .maxQty(t.getMaxQty()).price(t.getPrice())
-                .label(t.getLabel()).sortOrder(t.getSortOrder()).build())
-            .collect(Collectors.toList());
+                .map(t -> ProductPricingTier.builder()
+                        .product(product)
+                        .minQty(t.getMinQty())
+                        .maxQty(t.getMaxQty())
+                        .price(t.getPrice())
+                        .label(t.getLabel())
+                        .sortOrder(t.getSortOrder())
+                        .build())
+                .toList();
         product.getPricingTiers().addAll(newTiers);
 
         Product saved = productRepository.save(product);
         log.info("Pricing updated for product: {}", saved.getSlug());
-        return toAdminResponse(saved);
+
+        ProductInventory inv = inventoryRepository.findByProductId(saved.getId()).orElse(null);
+        List<ProductImage> images = productImageRepository.findByProductIdOrderBySortOrderAsc(saved.getId());
+        return toAdminResponse(saved, inv, images);
     }
 
-    // ── Soft delete (unchanged) ───────────────────────────────
+    // ── Soft delete ───────────────────────────────────────────
     @Transactional
     public void deleteProduct(Long id) {
         Product product = productRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
+                .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
         product.setIsActive(false);
         productRepository.save(product);
         log.info("Product soft-deleted: {}", product.getSlug());
     }
 
-    // ── Hard delete (unchanged) ───────────────────────────────
+    // ── Hard delete ───────────────────────────────────────────
     @Transactional
     public void hardDeleteProduct(Long id) {
-        if (!productRepository.existsById(id))
-            throw new ResourceNotFoundException("Product", "id", id);
-        productRepository.deleteById(id);
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
+
+        List<ProductImage> images = productImageRepository.findByProductIdOrderBySortOrderAsc(id);
+        for (ProductImage img : images) {
+            try {
+                if (img.getPublicId() != null && !img.getPublicId().isBlank()) {
+                    uploadService.deleteImage(img.getPublicId());
+                }
+            } catch (Exception e) {
+                log.warn("Could not delete Cloudinary image {} for product id={}: {}",
+                        img.getPublicId(), id, e.getMessage());
+            }
+        }
+
+        productRepository.delete(product);
         log.info("Product permanently deleted: id={}", id);
     }
 
@@ -284,83 +348,101 @@ public class ProductService {
     // PRIVATE MAPPERS
     // ═══════════════════════════════════════════════════════════
 
-    private ProductResponse toPublicResponse(Product p, boolean includeInventory) {
+    /**
+     * Public listing/detail mapper.
+     * Accepts a pre-loaded inventory record — null means no inventory row exists yet.
+     * No DB calls made inside this method.
+     */
+    private ProductResponse toPublicResponse(Product p, ProductInventory inv) {
         String stockStatus = "IN_STOCK";
-        if (includeInventory) {
-            var invOpt = inventoryRepository.findByProductId(p.getId());
-            if (invOpt.isPresent()) {
-                ProductInventory inv = invOpt.get();
-                stockStatus = inv.getAvailableQty() <= 0 ? "OUT_OF_STOCK"
-                    : inv.isLowStock() ? "LOW_STOCK" : "IN_STOCK";
-            }
+        if (inv != null) {
+            stockStatus = inv.getAvailableQty() <= 0 ? "OUT_OF_STOCK"
+                    : inv.isLowStock() ? "LOW_STOCK"
+                    : "IN_STOCK";
         }
+
         List<ProductResponse.PricingTierDto> tiers = p.getPricingTiers().stream()
-            .map(t -> ProductResponse.PricingTierDto.builder()
-                .minQty(t.getMinQty()).maxQty(t.getMaxQty())
-                .price(t.getPrice()).label(t.getLabel()).build())
-            .collect(Collectors.toList());
+                .map(t -> ProductResponse.PricingTierDto.builder()
+                        .minQty(t.getMinQty())
+                        .maxQty(t.getMaxQty())
+                        .price(t.getPrice())
+                        .label(t.getLabel())
+                        .build())
+                .toList();
 
         return ProductResponse.builder()
-            .id(p.getId()).name(p.getName()).slug(p.getSlug())
-            .category(p.getCategory()).categorySlug(p.getCategorySlug())
-            .description(p.getDescription()).fullDescription(p.getFullDescription())
-            .image(p.getImage()).images(p.getImages())
-            .moq(p.getMoq()).basePrice(p.getBasePrice())
-            .material(p.getMaterial()).leadTime(p.getLeadTime())
-            .brandingOptions(p.getBrandingOptions())
-            .isFeatured(p.getIsFeatured()).tags(p.getTags())
-            .pricingTiers(tiers).stockStatus(stockStatus)
-            .build();
+                .id(p.getId()).name(p.getName()).slug(p.getSlug())
+                .category(p.getCategory()).categorySlug(p.getCategorySlug())
+                .description(p.getDescription()).fullDescription(p.getFullDescription())
+                .image(p.getImage()).images(p.getImages())
+                .moq(p.getMoq()).basePrice(p.getBasePrice())
+                .material(p.getMaterial()).leadTime(p.getLeadTime())
+                .brandingOptions(p.getBrandingOptions())
+                .isFeatured(p.getIsFeatured()).tags(p.getTags())
+                .pricingTiers(tiers).stockStatus(stockStatus)
+                .build();
     }
 
-    public ProductAdminResponse toAdminResponse(Product p) {
+    /**
+     * Admin detail mapper.
+     * Accepts pre-loaded inventory and images — no DB calls made inside this method.
+     * The public toAdminResponse(Product) overload still works for single-product calls.
+     */
+    public ProductAdminResponse toAdminResponse(Product p, ProductInventory inv, List<ProductImage> images) {
         List<ProductAdminResponse.PricingTierDto> tiers = p.getPricingTiers().stream()
-            .map(t -> ProductAdminResponse.PricingTierDto.builder()
-                .id(t.getId()).minQty(t.getMinQty()).maxQty(t.getMaxQty())
-                .price(t.getPrice()).label(t.getLabel()).sortOrder(t.getSortOrder()).build())
-            .collect(Collectors.toList());
+                .map(t -> ProductAdminResponse.PricingTierDto.builder()
+                        .id(t.getId()).minQty(t.getMinQty()).maxQty(t.getMaxQty())
+                        .price(t.getPrice()).label(t.getLabel()).sortOrder(t.getSortOrder())
+                        .build())
+                .toList();
 
-        // ── NEW: load ProductImage records ────────────────────────────────────
-        List<ProductImageResponse> productImages = productImageRepository
-            .findByProductIdOrderBySortOrderAsc(p.getId())
-            .stream()
-            .map(productImageService::toResponse)
-            .collect(Collectors.toList());
+        List<ProductImageResponse> productImages = images.stream()
+                .map(productImageService::toResponse)
+                .toList();
 
         ProductAdminResponse.InventoryInfo invInfo = null;
-        var invOpt = inventoryRepository.findByProductId(p.getId());
-        if (invOpt.isPresent()) {
-            ProductInventory inv = invOpt.get();
+        if (inv != null) {
             int avail = inv.getAvailableQty();
             invInfo = ProductAdminResponse.InventoryInfo.builder()
-                .inventoryId(inv.getId())
-                .stockQty(inv.getStockQty())
-                .reservedQty(inv.getReservedQty())
-                .availableQty(avail)
-                .reorderLevel(inv.getReorderLevel())
-                .maxStockQty(inv.getMaxStockQty())
-                .isLowStock(inv.isLowStock())
-                .stockStatus(avail <= 0 ? "OUT_OF_STOCK" : inv.isLowStock() ? "LOW_STOCK" : "IN_STOCK")
-                .sku(inv.getSku())
-                .lastRestockedAt(inv.getLastRestockedAt())
-                .build();
+                    .inventoryId(inv.getId())
+                    .stockQty(inv.getStockQty())
+                    .reservedQty(inv.getReservedQty())
+                    .availableQty(avail)
+                    .reorderLevel(inv.getReorderLevel())
+                    .maxStockQty(inv.getMaxStockQty())
+                    .isLowStock(inv.isLowStock())
+                    .stockStatus(avail <= 0 ? "OUT_OF_STOCK" : inv.isLowStock() ? "LOW_STOCK" : "IN_STOCK")
+                    .sku(inv.getSku())
+                    .lastRestockedAt(inv.getLastRestockedAt())
+                    .build();
         }
 
         return ProductAdminResponse.builder()
-            .id(p.getId()).name(p.getName()).slug(p.getSlug())
-            .category(p.getCategory()).categorySlug(p.getCategorySlug())
-            .description(p.getDescription()).fullDescription(p.getFullDescription())
-            .image(p.getImage()).images(p.getImages())
-            .moq(p.getMoq()).basePrice(p.getBasePrice())
-            .material(p.getMaterial()).leadTime(p.getLeadTime())
-            .brandingOptions(p.getBrandingOptions())
-            .isFeatured(p.getIsFeatured()).isActive(p.getIsActive())
-            .sortOrder(p.getSortOrder()).tags(p.getTags())
-            .metaTitle(p.getMetaTitle()).metaDescription(p.getMetaDescription())
-            .createdAt(p.getCreatedAt()).updatedAt(p.getUpdatedAt())
-            .pricingTiers(tiers)
-            .productImages(productImages)               // ← NEW
-            .inventory(invInfo)
-            .build();
+                .id(p.getId()).name(p.getName()).slug(p.getSlug())
+                .category(p.getCategory()).categorySlug(p.getCategorySlug())
+                .description(p.getDescription()).fullDescription(p.getFullDescription())
+                .image(p.getImage()).images(p.getImages())
+                .moq(p.getMoq()).basePrice(p.getBasePrice())
+                .material(p.getMaterial()).leadTime(p.getLeadTime())
+                .brandingOptions(p.getBrandingOptions())
+                .isFeatured(p.getIsFeatured()).isActive(p.getIsActive())
+                .sortOrder(p.getSortOrder()).tags(p.getTags())
+                .metaTitle(p.getMetaTitle()).metaDescription(p.getMetaDescription())
+                .createdAt(p.getCreatedAt()).updatedAt(p.getUpdatedAt())
+                .pricingTiers(tiers)
+                .productImages(productImages)
+                .inventory(invInfo)
+                .build();
+    }
+
+    /**
+     * Convenience overload for single-product endpoints (getProductAdmin, updateProduct, etc.)
+     * where batch loading isn't needed. Fetches inventory and images itself.
+     */
+    public ProductAdminResponse toAdminResponse(Product p) {
+        ProductInventory inv = inventoryRepository.findByProductId(p.getId()).orElse(null);
+        List<ProductImage> images = productImageRepository.findByProductIdOrderBySortOrderAsc(p.getId());
+        return toAdminResponse(p, inv, images);
     }
 }
+

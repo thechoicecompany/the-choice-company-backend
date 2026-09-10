@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -19,8 +20,7 @@ public class ContactController {
 
     private final ContactService contactService;
 
-    // ── PUBLIC — called directly by ContactForm.tsx via springApi ──────────
-    // No auth required, same as your public inquiry submission endpoint.
+    // ── PUBLIC ──────────────────────────────────────────────────────────────
     @PostMapping("/api/contact")
     public ResponseEntity<ApiResponse<ContactResponse>> submit(
             @Valid @RequestBody ContactRequest request) {
@@ -29,33 +29,29 @@ public class ContactController {
             .body(ApiResponse.success(response, "Message sent successfully"));
     }
 
-    // ── ADMIN — list, paginated + filterable ────────────────────────────────
-    // NOTE: confirm this sits behind whatever secures your existing
-    // /api/admin/** routes (Spring Security config / @PreAuthorize) — I'm
-    // matching the URL prefix pattern, not re-declaring auth here since I
-    // don't have your SecurityConfig file.
-    // Wrapped in ApiResponse<> to match adminFetch()'s expected shape —
-    // same as fetchInquiries()/fetchAdminProducts() in admin-api.ts, which
-    // all unwrap `res.data` after an ApiResponse<PagedResponse<T>>.
+    // ── ADMIN — role guard added ─────────────────────────────────────────────
     @GetMapping("/api/admin/contact")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','SALES_MANAGER','SALES_EXECUTIVE')")
     public ResponseEntity<ApiResponse<PagedResponse<ContactResponse>>> list(
             @RequestParam(required = false) ContactStatus status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        PagedResponse<ContactResponse> result = contactService.listContactMessages(status, page, size);
-        return ResponseEntity.ok(ApiResponse.success(result));
+        return ResponseEntity.ok(ApiResponse.success(
+            contactService.listContactMessages(status, page, size)));
     }
 
     @GetMapping("/api/admin/contact/{id}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','SALES_MANAGER','SALES_EXECUTIVE')")
     public ResponseEntity<ApiResponse<ContactResponse>> get(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(contactService.getContactMessage(id)));
     }
 
     @PatchMapping("/api/admin/contact/{id}/status")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','SALES_MANAGER')")
     public ResponseEntity<ApiResponse<ContactResponse>> updateStatus(
             @PathVariable Long id,
             @Valid @RequestBody UpdateContactStatusRequest request) {
-        ContactResponse response = contactService.updateStatus(id, request);
-        return ResponseEntity.ok(ApiResponse.success(response, "Status updated"));
+        return ResponseEntity.ok(ApiResponse.success(
+            contactService.updateStatus(id, request), "Status updated"));
     }
 }
