@@ -193,11 +193,19 @@ public class ProductService {
             extraUrls.addAll(req.getImages());
         }
 
+        // ── Categories: use the array if the frontend sent one, else fall
+        // back to the legacy singular category (older callers, seed scripts) ──
+        List<String> cats = req.getCategories(); // @NotEmpty on the DTO guarantees non-empty
+        List<String> catSlugs = (req.getCategorySlugs() != null && !req.getCategorySlugs().isEmpty())
+                ? req.getCategorySlugs() : cats.stream().map(SlugUtils::toSlug).toList();
+
         Product product = Product.builder()
                 .name(req.getName())
                 .slug(slug)
-                .category(req.getCategory())
-                .categorySlug(req.getCategorySlug())
+                .category(cats.get(0))
+                .categorySlug(catSlugs.get(0))
+                .categories(cats)
+                .categorySlugs(catSlugs)
                 .description(req.getDescription())
                 .fullDescription(req.getFullDescription())
                 .image(primaryImageUrl)
@@ -258,8 +266,20 @@ public class ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
 
         if (req.getName()            != null) product.setName(req.getName());
-        if (req.getCategory()        != null) product.setCategory(req.getCategory());
-        if (req.getCategorySlug()    != null) product.setCategorySlug(req.getCategorySlug());
+
+        if (req.getCategories() != null && !req.getCategories().isEmpty()) {
+            List<String> catSlugs = (req.getCategorySlugs() != null && !req.getCategorySlugs().isEmpty())
+                    ? req.getCategorySlugs()
+                    : req.getCategories().stream().map(SlugUtils::toSlug).toList();
+            product.setCategories(req.getCategories());
+            product.setCategorySlugs(catSlugs);
+            product.setCategory(req.getCategories().get(0));
+            product.setCategorySlug(catSlugs.get(0));
+        } else {
+            if (req.getCategory()     != null) product.setCategory(req.getCategory());
+            if (req.getCategorySlug() != null) product.setCategorySlug(req.getCategorySlug());
+        }
+
         if (req.getDescription()     != null) product.setDescription(req.getDescription());
         if (req.getFullDescription() != null) product.setFullDescription(req.getFullDescription());
         if (req.getImage()           != null) product.setImage(req.getImage());
@@ -373,6 +393,7 @@ public class ProductService {
         return ProductResponse.builder()
                 .id(p.getId()).name(p.getName()).slug(p.getSlug())
                 .category(p.getCategory()).categorySlug(p.getCategorySlug())
+                .categories(p.getCategories()).categorySlugs(p.getCategorySlugs())
                 .description(p.getDescription()).fullDescription(p.getFullDescription())
                 .image(p.getImage()).images(p.getImages())
                 .moq(p.getMoq()).basePrice(p.getBasePrice())
@@ -420,6 +441,7 @@ public class ProductService {
         return ProductAdminResponse.builder()
                 .id(p.getId()).name(p.getName()).slug(p.getSlug())
                 .category(p.getCategory()).categorySlug(p.getCategorySlug())
+                .categories(p.getCategories()).categorySlugs(p.getCategorySlugs())
                 .description(p.getDescription()).fullDescription(p.getFullDescription())
                 .image(p.getImage()).images(p.getImages())
                 .moq(p.getMoq()).basePrice(p.getBasePrice())
@@ -445,4 +467,3 @@ public class ProductService {
         return toAdminResponse(p, inv, images);
     }
 }
-

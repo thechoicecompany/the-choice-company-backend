@@ -37,7 +37,8 @@ public class ProductResponse {
     // Public-safe stock indicator — just IN_STOCK / OUT_OF_STOCK
     // (no actual numbers shown publicly)
     private String stockStatus;
-
+    private List<String> categories;
+    private List<String> categorySlugs;
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class PricingTierDto {
         private Integer minQty;

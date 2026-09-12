@@ -40,7 +40,8 @@ public class ProductAdminResponse {
     private String metaDescription;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-
+    private List<String> categories;
+    private List<String> categorySlugs;
     // ── Pricing tiers ──────────────────────────────────────────
     private List<PricingTierDto> pricingTiers;
 
@@ -61,6 +62,7 @@ public class ProductAdminResponse {
         private Integer sortOrder;
     }
 
+    
     @Data @Builder @NoArgsConstructor @AllArgsConstructor
     public static class InventoryInfo {
         private Long inventoryId;

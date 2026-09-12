@@ -17,11 +17,16 @@ public class CreateProductRequest {
     private String name;
 
     private String slug;
+//
+//    @NotBlank @Size(min = 2, max = 100)
+//    private String category;
+//
+//    private String categorySlug;
+ // add:
+    @NotEmpty(message = "Select at least one category")
+    private List<@NotBlank String> categories;
 
-    @NotBlank @Size(min = 2, max = 100)
-    private String category;
-
-    private String categorySlug;
+    private List<String> categorySlugs;
 
     @NotBlank @Size(min = 10, max = 500)
     private String description;

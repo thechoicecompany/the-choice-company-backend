@@ -30,7 +30,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Query(value = """
         SELECT * FROM public.products p
         WHERE p.is_active = true
-          AND (:category IS NULL OR p.category_slug = :category)
+          AND (:category IS NULL OR p.category_slugs @> to_jsonb(CAST(:category AS text)))
           AND (:featured  IS NULL OR p.is_featured  = :featured)
           AND (:occasion  IS NULL OR p.tags::text   LIKE CONCAT('%"', :occasion, '"%'))
           AND (:minPrice  IS NULL OR p.base_price  >= :minPrice)
@@ -40,7 +40,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
         countQuery = """
         SELECT COUNT(*) FROM public.products p
         WHERE p.is_active = true
-          AND (:category IS NULL OR p.category_slug = :category)
+          AND (:category IS NULL OR p.category_slugs @> to_jsonb(CAST(:category AS text)))
           AND (:featured  IS NULL OR p.is_featured  = :featured)
           AND (:occasion  IS NULL OR p.tags::text   LIKE CONCAT('%"', :occasion, '"%'))
           AND (:minPrice  IS NULL OR p.base_price  >= :minPrice)
@@ -58,6 +58,11 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
         Pageable pageable
     );
 
-    @Query("SELECT DISTINCT p.category FROM Product p WHERE p.isActive = true ORDER BY p.category")
+    @Query(value = """
+        SELECT DISTINCT jsonb_array_elements_text(p.categories) AS category
+        FROM public.products p
+        WHERE p.is_active = true
+        ORDER BY category
+        """, nativeQuery = true)
     List<String> findDistinctCategories();
 }

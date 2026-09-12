@@ -44,4 +44,6 @@ public class UpdateProductRequest {
     private List<String> tags;
     private String metaTitle;
     private String metaDescription;
+    private List<String> categories;
+    private List<String> categorySlugs;
 }

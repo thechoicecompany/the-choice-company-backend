@@ -29,11 +29,25 @@ public class Product {
     @Column(unique = true, nullable = false, length = 200)
     private String slug;
 
+    // ── Legacy single-category fields — kept as the "primary" category
+    // for breadcrumbs, SEO, and any code still reading a single value.
+    // Always mirrors categories.get(0) / categorySlugs.get(0). ──────────────
     @Column(nullable = false, length = 100)
     private String category;
 
     @Column(name = "category_slug", nullable = false, length = 100)
     private String categorySlug;
+
+    // ── NEW: multi-category support ──────────────────────────────────────
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    @Builder.Default
+    private List<String> categories = new ArrayList<>();
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "category_slugs", columnDefinition = "jsonb")
+    @Builder.Default
+    private List<String> categorySlugs = new ArrayList<>();
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String description;
