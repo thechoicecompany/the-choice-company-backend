@@ -134,10 +134,11 @@ public class SecurityConfig {
                 // =========================================================
 
                 .requestMatchers(
-                    "/swagger-ui/**",
-                    "/api-docs/**",
-                    "/actuator/health"
-                ).permitAll()
+    "/swagger-ui/**",
+    "/api-docs/**",
+    "/actuator/health",
+    "/actuator/health/**"
+).permitAll()
                 
                 .requestMatchers(
                 	    HttpMethod.GET,
