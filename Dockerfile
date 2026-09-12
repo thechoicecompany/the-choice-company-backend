@@ -6,8 +6,6 @@ COPY pom.xml .
 
 RUN apt-get update && apt-get install -y maven
 
-RUN mvn dependency:go-offline
-
 COPY src ./src
 
 RUN mvn clean package -DskipTests
@@ -19,6 +17,6 @@ WORKDIR /app
 
 COPY --from=build /app/target/*.jar app.jar
 
-EXPOSE 8089
+EXPOSE 8080
 
-CMD ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar", "--spring.config.location=file:/etc/secrets/application.properties"]
