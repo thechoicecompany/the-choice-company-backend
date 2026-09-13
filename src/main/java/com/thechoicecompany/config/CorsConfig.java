@@ -43,24 +43,18 @@ public class CorsConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/api/**")
-            .allowedOrigins(
-                "http://localhost:3000",
-                "https://whimsical-fox-2ba37f.netlify.app",
-                "https://thechoicecompany.in",
-                frontendUrl
-            )
-            .allowedMethods(
-                "GET",
-                "POST",
-                "PUT",
-                "PATCH",
-                "DELETE",
-                "OPTIONS"
-            )
-            .allowedHeaders("*")
-            .exposedHeaders("Authorization")
-            .allowCredentials(true)
-            .maxAge(3600);
+     registry.addMapping("/api/**")
+    .allowedOriginPatterns(
+        "http://localhost:3000",
+        "https://thechoicecompany.in",
+        "https://www.thechoicecompany.in",
+        "https://*.netlify.app",
+        "https://6aa64d3a60fee800081025e9--whimsical-fox-2ba37f.netlify.app/"  // ← covers all Netlify preview deploys
+    )
+    .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+    .allowedHeaders("*")
+    .exposedHeaders("Authorization")
+    .allowCredentials(true)
+    .maxAge(3600);
     }
 }
