@@ -123,7 +123,8 @@ public class SecurityConfig {
 
                 .requestMatchers(
                     HttpMethod.GET,
-                    "/api/gallery/**"
+                    "/api/gallery/**",
+                    "/api/catalogues"
                 ).permitAll()
 
                 .requestMatchers("/files/**").permitAll()

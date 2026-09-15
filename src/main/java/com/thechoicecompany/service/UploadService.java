@@ -426,6 +426,9 @@ public class UploadService {
                     "public_id", publicId,
                     "folder", normalizedFolder,
                     "resource_type", "raw",   // ← key difference from image upload
+                    "format", "pdf", 
+                    
+                    
                     "overwrite", true
                 )
             );

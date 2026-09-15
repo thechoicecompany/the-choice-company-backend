@@ -1,7 +1,6 @@
 package com.thechoicecompany.service;
 
 import com.thechoicecompany.config.AppProperties;
-import com.thechoicecompany.entity.CatalogueRequest;
 import com.thechoicecompany.entity.ContactMessage;
 import com.thechoicecompany.entity.DemoOrder;
 import com.thechoicecompany.entity.Inquiry;
@@ -125,26 +124,7 @@ public class EmailService {
             log.error("Failed to send order confirmation email: {}", e.getMessage());
         }
     }
- // ── Catalogue Ack Email (to customer, with download link) ──────────────
-    @Async
-    public void sendCatalogueAck(CatalogueRequest request, String downloadUrl) {
-        try {
-            Context ctx = new Context();
-            ctx.setVariable("catalogue", request);
-            ctx.setVariable("downloadUrl", downloadUrl);
-            String html = templateEngine.process("email/catalogue-ack", ctx);
-            sendHtmlEmail(
-                request.getEmail(),
-                null,
-                "Your Catalogue is Ready | The Choice Company",
-                html
-            );
-            log.info("Catalogue ACK email sent to: {}", request.getEmail());
-        } catch (Exception e) {
-            log.error("Failed to send catalogue ACK email: {}", e.getMessage());
-        }
-    }
-
+ // 
  // In EmailService.java — add this method
  // Separate @Transactional so the main order save is never blocked
 
@@ -169,24 +149,7 @@ public class EmailService {
  }
     
     
-    // ── Catalogue Internal Alert (to info@ / sales) ──────────────────────────
-    @Async
-    public void sendCatalogueInternalAlert(CatalogueRequest request) {
-        try {
-            Context ctx = new Context();
-            ctx.setVariable("catalogue", request);
-            String html = templateEngine.process("email/catalogue-internal-alert", ctx);
-            sendHtmlEmail(
-                props.getEmail().getFrom(),
-                props.getEmail().getSales(),
-                "📥 New Catalogue Request: " + request.getEmail() + " via " + request.getSource(),
-                html
-            );
-            log.info("Catalogue internal alert sent for request id={}", request.getId());
-        } catch (Exception e) {
-            log.error("Failed to send catalogue internal alert email: {}", e.getMessage());
-        }
-    }
+    
     // ── Order Status Update Email (to customer) ─────────────────────────────
     private static final java.util.Set<OrderStatus> NOTIFIABLE_STATUSES = java.util.Set.of(
         OrderStatus.SHIPPED, OrderStatus.DELIVERED, OrderStatus.CANCELLED, OrderStatus.REFUNDED

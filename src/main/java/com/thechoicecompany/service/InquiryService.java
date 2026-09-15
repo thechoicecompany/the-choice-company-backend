@@ -68,7 +68,7 @@ public class InquiryService {
         Inquiry saved = inquiryRepository.save(inquiry);
 
         // Fire notifications asynchronously (non-blocking)
-        whatsAppService.sendInquiryAlert(saved);
+//        whatsAppService.sendInquiryAlert(saved);
         emailService.sendInquiryAck(saved);
         emailService.sendInquiryInternalAlert(saved);
 

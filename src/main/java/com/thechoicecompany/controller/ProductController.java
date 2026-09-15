@@ -40,7 +40,7 @@ public class ProductController {
     @GetMapping("/featured")
     @Operation(summary = "Featured products for home page")
     public ResponseEntity<ApiResponse<List<ProductResponse>>> featured(
-            @RequestParam(defaultValue = "6") int limit) {
+            @RequestParam(defaultValue = "12") int limit) {
         return ResponseEntity.ok(ApiResponse.success(productService.getFeaturedProducts(limit)));
     }
 

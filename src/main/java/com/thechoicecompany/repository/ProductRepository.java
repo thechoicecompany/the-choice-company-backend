@@ -23,10 +23,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Query("SELECT p.slug FROM Product p WHERE p.isActive = true")
     List<String> findAllActiveSlugs();
 
-    @EntityGraph(attributePaths = {"pricingTiers"})
-    @Query("SELECT p FROM Product p WHERE p.isFeatured = true AND p.isActive = true ORDER BY p.sortOrder ASC")
-    List<Product> findFeatured(Pageable pageable);
-
+@EntityGraph(attributePaths = {"pricingTiers"})
+@Query("SELECT p FROM Product p WHERE p.isFeatured = true AND p.isActive = true ORDER BY p.sortOrder ASC")
+List<Product> findFeatured(Pageable pageable);
     @Query(value = """
         SELECT * FROM public.products p
         WHERE p.is_active = true

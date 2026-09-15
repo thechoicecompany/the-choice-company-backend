@@ -16,6 +16,7 @@ public class GalleryItemDto {
     Integer sortOrder;
     String fileType;
     String thumbnailUrl;
+    String fileUrl; 
     Boolean isActive;
 
     public static GalleryItemDto from(GalleryItem g) {
@@ -29,6 +30,7 @@ public class GalleryItemDto {
             .sortOrder(g.getSortOrder())
             .fileType(g.getFileType())
             .thumbnailUrl(g.getThumbnailUrl())
+            .fileUrl(g.getFileUrl()) 
             .isActive(g.getIsActive())
             .build();
     }
