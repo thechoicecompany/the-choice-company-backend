@@ -111,6 +111,10 @@ public class ProductService {
     public List<ProductResponse> getFeaturedProducts(int limit) {
         List<Product> featured = productRepository.findFeatured(PageRequest.of(0, limit));
 
+        // NEW LINE — batch-fetch pricingTiers via default_batch_fetch_size=25
+        // (aapke application-prod.properties mein already set hai)
+        featured.forEach(p -> p.getPricingTiers().size());
+
         List<Long> ids = featured.stream().map(Product::getId).toList();
         Map<Long, ProductInventory> inventoryMap = inventoryRepository
                 .findAllByProductIdIn(ids)

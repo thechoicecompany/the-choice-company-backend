@@ -1,5 +1,5 @@
 package com.thechoicecompany.exception;
-
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import com.thechoicecompany.dto.response.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -87,6 +87,14 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(BadRequestException.class)
 	public ResponseEntity<ApiResponse<Void>> handleBadRequest(BadRequestException ex) {
 	    return ResponseEntity.badRequest().body(ApiResponse.error(ex.getMessage()));
+	}
+
+	
+
+
+	@ExceptionHandler(AsyncRequestNotUsableException.class)
+	public void handleClientAbort(AsyncRequestNotUsableException ex) {
+	    log.debug("Client aborted connection: {}", ex.getMessage());
 	}
 	
 }
