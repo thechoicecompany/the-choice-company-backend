@@ -19,8 +19,8 @@ public class CorsConfig implements WebMvcConfigurer {
         "https://thechoicecompany.in",
         "https://www.thechoicecompany.in",
         "https://*.netlify.app",
-        "https://6aa64d3a60fee800081025e9--whimsical-fox-2ba37f.netlify.app/",
-        "https://main.d3g19j87vmpv3j.amplifyapp.com/"  // ← covers all Netlify preview deploys
+        "https://6aa64d3a60fee800081025e9--whimsical-fox-2ba37f.netlify.app",
+"https://main.d3g19j87vmpv3j.amplifyapp.com"  // ← covers all Netlify preview deploys
     )
     .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
     .allowedHeaders("*")
